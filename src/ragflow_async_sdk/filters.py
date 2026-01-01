@@ -1,17 +1,20 @@
-from typing import TypedDict
+from typing import TypedDict, Optional
 
 
-class ListFilter(TypedDict):
-    page: int
-    page_size: int
-    orderBy: str
-    desc: bool
+class Filter(TypedDict):
+    page: Optional[int]
+    page_size: Optional[int]
+    orderBy: Optional[str]
+    desc: Optional[bool]
 
 
-class DatasetFilter(ListFilter):
-    id: int
-    name: str
+class DatasetFilter(Filter):
+    id: Optional[int]
+    name: Optional[str]
 
 
-
-def make_filters(**kwargs)
+class DocumentFilter(Filter):
+    id: Optional[int]
+    keywords: Optional[str]
+    create_time_from: Optional[int]
+    create_time_to: Optional[int]

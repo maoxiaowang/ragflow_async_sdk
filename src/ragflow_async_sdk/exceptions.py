@@ -1,13 +1,22 @@
 from __future__ import annotations
-from typing import Any, Optional
+
+from typing import Any
 
 
 class RAGFlowError(Exception):
     """Base exception for RAGFlow Async SDK."""
 
 
+# -------------------------
+# Pre-request
+# -------------------------
+
 class RAGFlowConfigError(RAGFlowError):
     """Invalid SDK configuration."""
+
+
+class RAGFlowValidationError(RAGFlowError):
+    """Invalid RAGFlow validation error."""
 
 
 # -------------------------
@@ -38,13 +47,13 @@ class RAGFlowAPIError(RAGFlowError):
     """API returned an error response."""
 
     def __init__(
-        self,
-        *,
-        status_code: int,
-        message: str,
-        code: str | None = None,
-        request_id: str | None = None,
-        details: Any | None = None,
+            self,
+            *,
+            status_code: int,
+            message: str,
+            code: str | None = None,
+            request_id: str | None = None,
+            details: Any | None = None,
     ):
         super().__init__(message)
         self.status_code = status_code
