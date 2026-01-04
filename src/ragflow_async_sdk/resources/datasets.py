@@ -1,8 +1,9 @@
 from typing import Optional, Any, List, Dict, Tuple
 
 from .base import BaseAPI
-from ..exceptions import RAGFlowValidationError
-from ..models.dataset import Dataset
+from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
+from ..models.dataset import Dataset, KnowledgeGraph
+from ..models.task import TaskStatus
 from ..types.ingestion import OrderBy, ChunkMethod
 from ..types.permission import Permission
 
@@ -13,7 +14,11 @@ __all__ = [
 
 class DatasetAPI(BaseAPI):
 
-    async def create(
+    # =========================
+    # Dataset
+    # =========================
+
+    async def create_dataset(
             self,
             name: str,
             *,
@@ -75,7 +80,7 @@ class DatasetAPI(BaseAPI):
 
         return Dataset.from_raw(data)
 
-    async def list(
+    async def list_datasets(
             self,
             *,
             page: int = 1,
@@ -125,7 +130,7 @@ class DatasetAPI(BaseAPI):
 
         return {}
 
-    async def update(
+    async def update_dataset(
             self,
             dataset_id: str,
             *,
@@ -191,10 +196,10 @@ class DatasetAPI(BaseAPI):
         resp = await self._client.put(url, json=payload)
         self._handle_response(resp, require_data=False)
 
-    async def delete(
+    async def delete_datasets(
             self,
             ids: Optional[str | List[str]] = None,
-    ) -> None:
+    ) -> bool:
         """
         Delete datasets by ID.
 
@@ -225,3 +230,137 @@ class DatasetAPI(BaseAPI):
 
         resp = await self._client.delete("/datasets", json=payload)
         self._handle_response(resp, require_data=False)
+
+        return True
+
+    # =========================
+    # Knowledge Graph
+    # =========================
+
+    async def get_knowledge_graph(self, dataset_id: str) -> KnowledgeGraph:
+        """
+        Retrieve the knowledge graph of a dataset.
+
+        Args:
+            dataset_id: Target dataset ID.
+
+        Returns:
+            KnowledgeGraph instance containing nodes, edges, metadata, mind_map.
+        """
+        if not dataset_id:
+            raise RAGFlowValidationError("dataset_id is required")
+
+        url = f"/datasets/{dataset_id}/knowledge_graph"
+        resp = await self._client.get(url)
+        resp = self._handle_response(resp)
+
+        data = resp.get("data") or {}
+        return KnowledgeGraph.from_raw(data)
+
+    async def construct_knowledge_graph(self, dataset_id: str) -> str:
+        """
+        Run GraphRAG (knowledge graph) construction for a dataset.
+
+        Returns:
+            graphrag_task_id
+        """
+        if not dataset_id:
+            raise RAGFlowValidationError("dataset_id is required")
+
+        url = f"/datasets/{dataset_id}/run_graphrag"
+        resp = await self._client.post(url)
+        resp = self._handle_response(resp)
+
+        data = resp.get("data") or {}
+        task_id = data.get("graphrag_task_id")
+
+        if not task_id:
+            raise RAGFlowAPIError(
+                message="Missing graphrag_task_id in response",
+                details=resp,
+                status_code=500,
+            )
+        return task_id
+
+    async def get_graphrag_status(self, dataset_id: str) -> TaskStatus:
+        """
+        Get the knowledge graph construction status.
+
+        Returns:
+            TaskStatus instance containing progress, messages, timestamps, etc.
+        """
+        if not dataset_id:
+            raise RAGFlowValidationError("dataset_id is required")
+
+        url = f"/datasets/{dataset_id}/trace_graphrag"
+        resp = await self._client.get(url)
+        resp = self._handle_response(resp)
+
+        return TaskStatus.from_raw(resp.get("data") or {})
+
+    async def delete_knowledge_graph(self, dataset_id: str) -> bool:
+        """
+        Delete the knowledge graph of a dataset.
+
+        Args:
+            dataset_id: Target dataset ID.
+
+        Returns:
+            True if deletion succeeded.
+        """
+        if not dataset_id:
+            raise RAGFlowValidationError("dataset_id is required")
+
+        url = f"/datasets/{dataset_id}/knowledge_graph"
+        resp = await self._client.delete(url)
+        resp = self._handle_response(resp)
+
+        result = resp.get("data")
+        if not isinstance(result, bool):
+            raise RAGFlowAPIError(
+                message="Unexpected response type for delete knowledge graph",
+                details=resp,
+                status_code=500,
+            )
+        return result
+
+    async def construct_raptor(self, dataset_id: str) -> str:
+        """
+        Run RAPTOR construction for a dataset.
+
+        Returns:
+            raptor_task_id
+        """
+        if not dataset_id:
+            raise RAGFlowValidationError("dataset_id is required")
+
+        url = f"/datasets/{dataset_id}/run_raptor"
+        resp = await self._client.post(url)
+        resp = self._handle_response(resp)
+
+        data = resp.get("data") or {}
+        task_id = data.get("raptor_task_id")
+
+        if not task_id:
+            raise RAGFlowAPIError(
+                message="Missing raptor_task_id in response",
+                details=resp,
+                status_code=500,
+            )
+        return task_id
+
+    async def get_raptor_status(self, dataset_id: str) -> TaskStatus:
+        """
+        Get the RAPTOR construction status.
+
+        Returns:
+            TaskStatus instance containing progress, messages, timestamps, etc.
+        """
+        if not dataset_id:
+            raise RAGFlowValidationError("dataset_id is required")
+
+        url = f"/datasets/{dataset_id}/trace_raptor"
+        resp = await self._client.get(url)
+        resp = self._handle_response(resp)
+
+        return TaskStatus.from_raw(resp.get("data") or {})

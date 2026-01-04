@@ -58,7 +58,7 @@ class AsyncHTTPClient:
             **kwargs,
     ) -> Dict | Response:
         url = self._build_url(path)
-
+        print(self._client.headers)
         try:
             resp = await self._client.request(
                 method, url, params=params, json=json, files=files, timeout=timeout, **kwargs
