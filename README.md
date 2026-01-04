@@ -67,6 +67,62 @@ await client.datasets.delete_datasets(ids=["id1", "id2"])
 await client.datasets.delete_datasets(ids=None)
 ```
 
+## Document Management
+
+### Upload Documents
+
+```python
+import aiofiles
+
+from ragflow_async_sdk.models.document import Document
+
+files_to_upload = [
+    ("test1.txt", b"content of file 1", "text/plain"),
+]
+
+async with aiofiles.open("example.pdf", "rb") as f:
+    pdf_bytes = await f.read()
+    files_to_upload.append(("test2.pdf", pdf_bytes, "application/pdf"))
+
+docs, count = await client.datasets.upload_documents(dataset_id=ds.id, files=files_to_upload)
+print(f"Uploaded {count} documents")
+```
+
+### Download Document
+
+```python
+file_bytes = await client.datasets.download_document(dataset_id=ds.id, document_id=docs[0]['id'])
+with open("downloaded_file.txt", "wb") as f:
+    f.write(file_bytes)
+```
+
+### List Documents
+
+```python
+documents, total_docs = await client.datasets.list_documents(dataset_id=ds.id, page=1, page_size=10)
+for doc in documents:
+    print(doc.name, doc.type, doc.size)
+```
+
+### Update Document
+
+```python
+updated_doc = await client.datasets.update_document(
+    dataset_id=ds.id,
+    document_id=docs[0]['id'],
+    name="manual.txt",
+    chunk_method="manual",
+    parser_config={"chunk_token_num": 128}
+)
+print(updated_doc.to_dict())
+```
+
+### Delete Documents
+
+```python
+await client.datasets.delete_documents(dataset_id=ds.id, ids=[docs[0]['id']])
+```
+
 ## Knowledge Graph (GraphRAG) Usage
 
 ### Get Knowledge Graph
@@ -136,7 +192,7 @@ except HTTPTimeoutError:
 
 ## Type Notes
 
-- `Dataset.to_dict()` converts a Dataset object into a dictionary.
+- `Dataset.to_dict()` converts an Entity object into a dictionary.
 - `KnowledgeGraph` contains `nodes`, `edges`, and optional `mind_map`.
 - `TaskStatus` contains `progress`, `progress_msg`, timestamps, and task metadata.
 
