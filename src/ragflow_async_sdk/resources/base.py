@@ -7,7 +7,11 @@ from ..http import AsyncHTTPClient
 
 class BaseAPI:
 
-    def __init__(self, client: AsyncHTTPClient):
+    def __init__(
+            self,
+            client: AsyncHTTPClient,
+            auto_parse_datetime=False
+    ):
         self._client = client
 
     def _handle_stream_response(self, data: bytes):

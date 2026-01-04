@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Any, TypeVar, Type
-from dataclasses import fields, MISSING
+from dataclasses import fields, MISSING, is_dataclass
 
 T = TypeVar("T", bound="BaseEntity")
 
@@ -29,11 +29,17 @@ class BaseEntity:
         obj._raw = raw
         return obj
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, full: bool = False) -> dict[str, Any]:
         result = {}
-        for field in self.__export_fields__:
-            value = getattr(self, field, None)
-            result[field] = self._serialize_value(value)
+        if full:
+            for k, v in self._raw.items():
+                result[k] = self._serialize_value(v)
+        else:
+            export_fields = getattr(self, "__export_fields__", [])
+            for field_name in export_fields:
+                value = getattr(self, field_name, None)
+                result[field_name] = self._serialize_value(value)
+
         return result
 
     def _serialize_value(self, value: Any) -> Any:

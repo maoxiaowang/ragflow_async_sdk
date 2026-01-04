@@ -3,12 +3,20 @@ from .exceptions import (
 )
 from .http import AsyncHTTPClient
 from .resources.datasets import DatasetAPI
+from .resources.documents import DocumentsAPI
 
 
 class AsyncRAGFlowClient:
     """RAGFlow async SDK top-level client."""
 
-    def __init__(self, base_url: str, api_key: str, timeout: float = 10.0, api_version: str = "v1", **kwargs):
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        timeout: float = 10.0,
+        api_version: str = "v1",
+        **kwargs,
+    ):
         if api_version not in ("v1",):
             raise RAGFlowConfigError("API version only supports v1 now")
         headers = {"Authorization": f"Bearer {api_key}", "Accept": "application/json"}
@@ -17,6 +25,7 @@ class AsyncRAGFlowClient:
 
         # Resource
         self.datasets = DatasetAPI(self._http)
+        self.documents = DocumentsAPI(self._http)
 
     async def close(self):
         await self._http.close()

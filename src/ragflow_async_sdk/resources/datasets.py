@@ -6,6 +6,7 @@ from ..models.dataset import Dataset, KnowledgeGraph
 from ..models.task import TaskStatus
 from ..types.ingestion import OrderBy, ChunkMethod
 from ..types.permission import Permission
+from ..utils.validators import normalize_ids
 
 __all__ = [
     "DatasetAPI"
@@ -199,7 +200,7 @@ class DatasetAPI(BaseAPI):
     async def delete_datasets(
             self,
             ids: Optional[str | List[str]] = None,
-    ) -> bool:
+    ) -> None:
         """
         Delete datasets by ID.
 
@@ -212,16 +213,7 @@ class DatasetAPI(BaseAPI):
         Raises:
             RAGFlowAPIError: if deletion fails
         """
-        if ids is not None:
-            if isinstance(ids, str):
-                ids = [ids]
-            elif isinstance(ids, list):
-                if not all(isinstance(i, str) for i in ids):
-                    raise RAGFlowValidationError("All elements in 'ids' must be strings")
-            else:
-                raise RAGFlowValidationError("'ids' must be a string, a list of strings, or None")
-
-        payload: dict[str, Any] = {"ids": ids}
+        payload: dict[str, Any] = {"ids": normalize_ids(ids)}
         payload = self._normalize_request(payload)
 
         if "ids" not in payload:
@@ -230,8 +222,6 @@ class DatasetAPI(BaseAPI):
 
         resp = await self._client.delete("/datasets", json=payload)
         self._handle_response(resp, require_data=False)
-
-        return True
 
     # =========================
     # Knowledge Graph
@@ -298,7 +288,7 @@ class DatasetAPI(BaseAPI):
 
         return TaskStatus.from_raw(resp.get("data") or {})
 
-    async def delete_knowledge_graph(self, dataset_id: str) -> bool:
+    async def delete_knowledge_graph(self, dataset_id: str) -> None:
         """
         Delete the knowledge graph of a dataset.
 
@@ -322,7 +312,6 @@ class DatasetAPI(BaseAPI):
                 details=resp,
                 status_code=500,
             )
-        return result
 
     async def construct_raptor(self, dataset_id: str) -> str:
         """

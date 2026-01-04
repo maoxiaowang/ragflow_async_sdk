@@ -11,35 +11,45 @@ __all__ = [
 
 @dataclass(slots=True)
 class Dataset(BaseEntity):
+    """
+    Dataset model for RAGFlow.
+    """
     id: str
     name: str
-    permission: str
     status: str
-
-    description: Optional[str] = None
-    avatar: Optional[str] = None
-    language: Optional[str] = None
-
+    permission: str
     document_count: Optional[int] = None
     chunk_count: Optional[int] = None
     token_num: Optional[int] = None
 
-    created_at: Optional[int] = None
-    updated_at: Optional[int] = None
+    create_time: Optional[int] = None
+    create_date: Optional[str] = None
+    update_time: Optional[int] = None
+    update_date: Optional[str] = None
+
+    avatar: Optional[str] = None
+    description: Optional[str] = None
+    language: Optional[str] = None
+    embedding_model: Optional[str] = None
+    chunk_method: Optional[str] = None
 
     __export_fields__ = (
         "id",
         "name",
-        "permission",
         "status",
-        "description",
-        "avatar",
-        "language",
+        "permission",
         "document_count",
         "chunk_count",
         "token_num",
-        "created_at",
-        "updated_at",
+        "create_time",
+        "create_date",
+        "update_time",
+        "update_date",
+        "avatar",
+        "description",
+        "language",
+        "embedding_model",
+        "chunk_method",
     )
 
 
