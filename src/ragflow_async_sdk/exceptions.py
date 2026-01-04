@@ -52,13 +52,11 @@ class RAGFlowAPIError(RAGFlowError):
             status_code: int,
             message: str,
             code: str | None = None,
-            request_id: str | None = None,
             details: Any | None = None,
     ):
         super().__init__(message)
         self.status_code = status_code
         self.code = code
-        self.request_id = request_id
         self.details = details
 
 

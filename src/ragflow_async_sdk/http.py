@@ -1,6 +1,5 @@
 import logging
-from csv import DictReader
-from typing import Any, Optional, List, Tuple, Dict
+from typing import Optional, List, Tuple, Dict
 
 import httpx
 from httpx import Response
@@ -11,14 +10,18 @@ logger = logging.getLogger(__name__)
 class HTTPClientError(Exception):
     """Base HTTP client error"""
 
+
 class HTTPTimeoutError(HTTPClientError):
     pass
+
 
 class HTTPConnectionError(HTTPClientError):
     pass
 
+
 class HTTPTransportError(HTTPClientError):
     pass
+
 
 class HTTPResponseError(HTTPClientError):
     pass
@@ -26,6 +29,7 @@ class HTTPResponseError(HTTPClientError):
 
 class AsyncHTTPClient:
     """通用异步 HTTP 客户端，封装 httpx.AsyncClient"""
+
     def __init__(self, base_url: str, *, headers: Optional[dict] = None, timeout: float = 10.0, **kwargs):
         self.base_url = base_url.rstrip("/")
         kwargs.setdefault("trust_env", False)
@@ -42,19 +46,19 @@ class AsyncHTTPClient:
         return f"{self.base_url}/{path.lstrip('/')}"
 
     async def _request(
-        self,
-        method: str,
-        path: str,
-        *,
-        params: Optional[dict] = None,
-        json: Optional[dict] = None,
-        files: Optional[List[Tuple[str, Tuple[str, bytes, Optional[str]]]]] = None,
-        expect_json: bool = True,
-        timeout: Optional[float] = None,
-        **kwargs,
+            self,
+            method: str,
+            path: str,
+            *,
+            params: Optional[dict] = None,
+            json: Optional[dict] = None,
+            files: Optional[List[Tuple[str, Tuple[str, bytes, Optional[str]]]]] = None,
+            expect_json: bool = True,
+            timeout: Optional[float] = None,
+            **kwargs,
     ) -> Dict | Response:
         url = self._build_url(path)
-        print(f"Request {method} {url} {params} {json} {files} {timeout} {kwargs}")
+
         try:
             resp = await self._client.request(
                 method, url, params=params, json=json, files=files, timeout=timeout, **kwargs

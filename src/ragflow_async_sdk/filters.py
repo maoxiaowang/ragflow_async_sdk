@@ -4,7 +4,7 @@ from typing import TypedDict, Optional
 class Filter(TypedDict):
     page: Optional[int]
     page_size: Optional[int]
-    orderBy: Optional[str]
+    orderby: Optional[str]
     desc: Optional[bool]
 
 

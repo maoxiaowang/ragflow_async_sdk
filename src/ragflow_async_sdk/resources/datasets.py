@@ -1,8 +1,8 @@
-from typing import Optional, List, Tuple, Any
+from typing import Optional, Any, List, Dict, Tuple
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError
-from ..models.dataset import DatasetRaw, Dataset
+from ..models.dataset import Dataset
 from ..types.ingestion import OrderBy, ChunkMethod
 from ..types.permission import Permission
 
@@ -12,58 +12,6 @@ __all__ = [
 
 
 class DatasetAPI(BaseAPI):
-
-    async def list(
-            self,
-            *,
-            page: int = 1,
-            page_size: int = 30,
-            order_by: OrderBy = OrderBy.CREATE_TIME,
-            desc: bool = True,
-            id: Optional[str] = None,
-            name: Optional[str] = None,
-    ) -> Tuple[List[Dataset], int]:
-        params = {
-            "page": page,
-            "page_size": page_size,
-            "orderBy": order_by,
-            "desc": desc,
-            "id": id,
-            "name": name,
-        }
-        params = self._clean_params(params)
-
-        resp = await self._client.get("/datasets", params=params)
-        resp = await self._handle_response(resp)
-
-        raw_items: List[DatasetRaw] = resp.get("data", [])
-        total = resp.get("total", 0)
-
-        datasets = [Dataset.from_raw(item) for item in raw_items]
-        return datasets, total
-
-    @staticmethod
-    def _default_parser_config(method: ChunkMethod | str) -> dict:
-        if method is ChunkMethod.NAIVE:
-            return {
-                "chunk_token_num": 512,
-                "delimiter": "\n",
-                "raptor": {"use_raptor": False},
-                "graphrag": {"use_graphrag": False},
-            }
-
-        if method in {
-            ChunkMethod.QA,
-            ChunkMethod.MANUAL,
-            ChunkMethod.PAPER,
-            ChunkMethod.BOOK,
-            ChunkMethod.LAWS,
-            ChunkMethod.PRESENTATION,
-        }:
-            return {"raptor": {"use_raptor": False}}
-
-        # table / picture / one / email / tag
-        return {}
 
     async def create(
             self,
@@ -104,7 +52,7 @@ class DatasetAPI(BaseAPI):
         if chunk_method is not None and parser_config is None:
             parser_config = self._default_parser_config(chunk_method)
 
-        payload: dict[str, Any] = {
+        payload = {
             "name": name,
             "avatar": avatar,
             "description": description,
@@ -112,15 +60,168 @@ class DatasetAPI(BaseAPI):
         }
 
         if chunk_method is not None:
-            payload["chunk_method"] =chunk_method.value
+            payload["chunk_method"] = chunk_method.value
             payload["parser_config"] = parser_config or {}
 
         if parse_type is not None:
             payload["parse_type"] = parse_type
             payload["pipeline_id"] = pipeline_id
 
-        payload = self._clean_params(payload)
+        payload = self._normalize_request(payload)
         resp = await self._client.post("/datasets", json=payload)
-        resp = await self._handle_response(resp)
+        resp = self._handle_response(resp)
 
-        return Dataset.from_raw(resp)
+        data = resp["data"]
+
+        return Dataset.from_raw(data)
+
+    async def list(
+            self,
+            *,
+            page: int = 1,
+            page_size: int = 30,
+            order_by: OrderBy = OrderBy.CREATE_TIME,
+            desc: bool = True,
+            dataset_id: Optional[str] = None,
+            name: Optional[str] = None,
+    ) -> Tuple[List[Dataset], int]:
+        params = {
+            "page": page,
+            "page_size": page_size,
+            "orderby": order_by,
+            "desc": desc,
+            "id": dataset_id,
+            "name": name,
+        }
+        params = self._normalize_request(params)
+        resp = await self._client.get("/datasets", params=params)
+        resp = self._handle_response(resp)
+
+        raw_items: List[Dict[str, Any]] = resp.get("data", [])
+        total = resp.get("total_datasets", 0)
+
+        datasets = [Dataset.from_raw(item) for item in raw_items]
+        return datasets, total
+
+    @staticmethod
+    def _default_parser_config(method: ChunkMethod | str) -> Dict:
+        if method is ChunkMethod.NAIVE:
+            return {
+                "chunk_token_num": 512,
+                "delimiter": "\n",
+                "raptor": {"use_raptor": False},
+                "graphrag": {"use_graphrag": False},
+            }
+
+        if method in {
+            ChunkMethod.QA,
+            ChunkMethod.MANUAL,
+            ChunkMethod.PAPER,
+            ChunkMethod.BOOK,
+            ChunkMethod.LAWS,
+            ChunkMethod.PRESENTATION,
+        }:
+            return {"raptor": {"use_raptor": False}}
+
+        return {}
+
+    async def update(
+            self,
+            dataset_id: str,
+            *,
+            name: Optional[str] = None,
+            avatar: Optional[str] = None,
+            description: Optional[str] = None,
+            embedding_model: Optional[str] = None,
+            permission: Optional[Permission | str] = None,
+            pagerank: Optional[int] = None,
+            chunk_method: Optional[ChunkMethod | str] = None,
+            parser_config: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Update a dataset's configuration.
+
+        Only provide the fields you want to update. For chunk_method changes,
+        parser_config can be provided; otherwise defaults are used.
+        """
+        # normalize chunk_method
+        if chunk_method is not None:
+            if isinstance(chunk_method, str):
+                try:
+                    chunk_method = ChunkMethod(chunk_method)
+                except ValueError:
+                    raise RAGFlowValidationError(
+                        f"Invalid chunk_method: {chunk_method!r}. "
+                        f"Allowed: {[m.value for m in ChunkMethod]}"
+                    )
+
+        # parser_config default for chunk_method
+        if chunk_method is not None and parser_config is None:
+            parser_config = self._default_parser_config(chunk_method)
+
+        # normalize permission
+        if isinstance(permission, str):
+            try:
+                permission = Permission(permission)
+            except ValueError:
+                raise RAGFlowValidationError(
+                    f"Invalid permission: {permission!r}. "
+                    f"Allowed: {[p.value for p in Permission]}"
+                )
+
+        payload: dict[str, Any] = {
+            "name": name,
+            "avatar": avatar,
+            "description": description,
+            "embedding_model": embedding_model,
+            "permission": permission.value if permission else None,
+            "pagerank": pagerank,
+        }
+
+        if chunk_method is not None:
+            payload["chunk_method"] = chunk_method.value
+            payload["parser_config"] = parser_config or {}
+
+        payload = self._normalize_request(payload)
+
+        if not payload:
+            raise RAGFlowValidationError("No fields provided to update.")
+
+        url = f"/datasets/{dataset_id}"
+        resp = await self._client.put(url, json=payload)
+        self._handle_response(resp, require_data=False)
+
+    async def delete(
+            self,
+            ids: Optional[str | List[str]] = None,
+    ) -> None:
+        """
+        Delete datasets by ID.
+
+        Args:
+            ids: List of dataset IDs to delete.
+                 - None: delete all datasets
+                 - []: delete nothing
+                 - [id1, id2]: delete specified datasets
+
+        Raises:
+            RAGFlowAPIError: if deletion fails
+        """
+        if ids is not None:
+            if isinstance(ids, str):
+                ids = [ids]
+            elif isinstance(ids, list):
+                if not all(isinstance(i, str) for i in ids):
+                    raise RAGFlowValidationError("All elements in 'ids' must be strings")
+            else:
+                raise RAGFlowValidationError("'ids' must be a string, a list of strings, or None")
+
+        payload: dict[str, Any] = {"ids": ids}
+        payload = self._normalize_request(payload)
+
+        if "ids" not in payload:
+            # If null provided, all datasets will be deleted.
+            payload["ids"] = None
+
+        resp = await self._client.delete("/datasets", json=payload)
+        self._handle_response(resp, require_data=False)

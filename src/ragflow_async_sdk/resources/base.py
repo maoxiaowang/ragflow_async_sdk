@@ -1,4 +1,5 @@
-from typing import Dict, Any
+from enum import Enum
+from typing import Any
 
 from ..exceptions import RAGFlowAPIError
 from ..http import AsyncHTTPClient
@@ -9,19 +10,60 @@ class BaseAPI:
     def __init__(self, client: AsyncHTTPClient):
         self._client = client
 
-    @staticmethod
-    def _clean_params(params: Dict[str, Any]) -> Dict[str, Any]:
-        return {k: v for k, v in params.items() if v is not None}
-
-    async def _handle_stream_response(self, data: bytes):
+    def _handle_stream_response(self, data: bytes):
         ...
 
     @staticmethod
-    async def _handle_response(data: Dict[str, Any]) -> Any:
-        if not isinstance(data, dict):
-            raise RAGFlowAPIError(status_code=500, message="RAGFlow response is not a JSON object")
+    def _handle_response(response: dict[str, Any], require_data: bool = True) -> dict[str, Any]:
+        if not isinstance(response, dict):
+            raise RAGFlowAPIError(
+                status_code=500,
+                message="RAGFlow response is not a JSON object",
+                details=response
+            )
 
-        if data.get("code") != 0:
-            raise RAGFlowAPIError(status_code=400, message=data.get("message", "Unknown RAGFlow error"))
+        code = response.get("code")
+        if code != 0:
+            raise RAGFlowAPIError(
+                status_code=400,
+                message=response.get("message", "Unknown RAGFlow error"),
+                code=str(code),
+                details=response
+            )
 
-        return data.get("data", {})
+        data = response.get("data")
+        if data is None and require_data:
+            raise RAGFlowAPIError(
+                status_code=500,
+                message="RAGFlow response is empty",
+                details=response
+            )
+
+        return response
+
+    @staticmethod
+    def _normalize_request(data: dict[str, Any]) -> dict[str, Any]:
+        def normalize(value: Any) -> Any:
+            if value is None:
+                return None
+
+            if isinstance(value, Enum):
+                return value.value
+
+            if isinstance(value, dict):
+                return {
+                    k: normalize(v)
+                    for k, v in value.items()
+                    if v is not None
+                }
+
+            if isinstance(value, (list, tuple)):
+                return [normalize(v) for v in value if v is not None]
+
+            return value
+
+        return {
+            k: normalize(v)
+            for k, v in data.items()
+            if v is not None
+        }
