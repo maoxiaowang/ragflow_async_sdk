@@ -1,58 +1,14 @@
-from enum import Enum
-from typing import Optional, List, Tuple, Dict, Any, TypedDict
+from typing import Optional, List, Tuple, Any
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError
-from ..types import Dataset
+from ..models.dataset import DatasetRaw, Dataset
+from ..types.ingestion import OrderBy, ChunkMethod
+from ..types.permission import Permission
 
 __all__ = [
     "DatasetAPI"
 ]
-
-
-class ChunkMethod(str, Enum):
-    NAIVE = "naive"
-    BOOK = "book"
-    EMAIL = "email"
-    LAWS = "laws"
-    MANUAL = "manual"
-    ONE = "one"
-    PAPER = "paper"
-    PICTURE = "picture"
-    PRESENTATION = "presentation"
-    QA = "qa"
-    TABLE = "table"
-    TAG = "tag"
-
-
-class RaptorConfig(TypedDict, total=False):
-    use_raptor: bool
-
-
-class GraphRagConfig(TypedDict, total=False):
-    use_graphrag: bool
-
-
-class NaiveParserConfig(TypedDict, total=False):
-    auto_keywords: int
-    auto_questions: int
-    chunk_token_num: int
-    delimiter: str
-    html4excel: bool
-    layout_recognize: str
-    tag_kb_ids: List[str]
-    task_page_size: int
-    raptor: RaptorConfig
-    graphrag: GraphRagConfig
-
-
-# 其他 chunk_method 用的
-class SimpleParserConfig(TypedDict, total=False):
-    raptor: RaptorConfig
-
-class Permission(str, Enum):
-    ME = "me"
-    TEAM = "team"
 
 
 class DatasetAPI(BaseAPI):
@@ -62,66 +18,76 @@ class DatasetAPI(BaseAPI):
             *,
             page: int = 1,
             page_size: int = 30,
-            order_by: str = "create_time",
+            order_by: OrderBy = OrderBy.CREATE_TIME,
             desc: bool = True,
-            id: Optional[int] = None,
+            id: Optional[str] = None,
             name: Optional[str] = None,
     ) -> Tuple[List[Dataset], int]:
-        params = {"page": page, "page_size": page_size, "orderBy": order_by, "desc": desc, "id": id, "name": name}
+        params = {
+            "page": page,
+            "page_size": page_size,
+            "orderBy": order_by,
+            "desc": desc,
+            "id": id,
+            "name": name,
+        }
         params = self._clean_params(params)
-        resp = await self._client.get("/datasets", params=params)
 
-        return (
-            resp.get("data", []),
-            resp.get("total_datasets", 0),
-        )
+        resp = await self._client.get("/datasets", params=params)
+        resp = await self._handle_response(resp)
+
+        raw_items: List[DatasetRaw] = resp.get("data", [])
+        total = resp.get("total", 0)
+
+        datasets = [Dataset.from_raw(item) for item in raw_items]
+        return datasets, total
+
+    @staticmethod
+    def _default_parser_config(method: ChunkMethod | str) -> dict:
+        if method is ChunkMethod.NAIVE:
+            return {
+                "chunk_token_num": 512,
+                "delimiter": "\n",
+                "raptor": {"use_raptor": False},
+                "graphrag": {"use_graphrag": False},
+            }
+
+        if method in {
+            ChunkMethod.QA,
+            ChunkMethod.MANUAL,
+            ChunkMethod.PAPER,
+            ChunkMethod.BOOK,
+            ChunkMethod.LAWS,
+            ChunkMethod.PRESENTATION,
+        }:
+            return {"raptor": {"use_raptor": False}}
+
+        # table / picture / one / email / tag
+        return {}
 
     async def create(
             self,
             name: str,
             *,
-            chunk_method: Optional[ChunkMethod|str] = None,
-            parser_config: Optional[dict] = None,
-            parse_type: Optional[str] = None,
-            pipeline_id: Optional[str] = None,
-            description: Optional[str] = None,
-            avatar: Optional[str] = None,
-            permission: Optional[Permission|str] = None,
+            chunk_method: ChunkMethod | str | None = None,
+            parser_config: dict | None = None,
+            parse_type: str | None = None,
+            pipeline_id: str | None = None,
+            description: str | None = None,
+            avatar: str | None = None,
+            permission: Permission = Permission.ME,
     ) -> Dataset:
-        """
-        Create a dataset.
-
-        You can choose ONE ingestion mode:
-        - Built-in chunking: specify chunk_method (optional parser_config)
-        - Ingestion pipeline: specify both parse_type and pipeline_id
-
-        If none is provided, defaults to chunk_method = "naive".
-        """
-
-        def default_parser_config(method) -> dict:
-            if method == ChunkMethod.NAIVE:
-                return {
-                    "chunk_token_num": 512,
-                    "delimiter": "\n",
-                    "raptor": {"use_raptor": False},
-                    "graphrag": {"use_graphrag": False},
-                }
-
-            if method in {
-                ChunkMethod.QA,
-                ChunkMethod.MANUAL,
-                ChunkMethod.PAPER,
-                ChunkMethod.BOOK,
-                ChunkMethod.LAWS,
-                ChunkMethod.PRESENTATION,
-            }:
-                return {"raptor": {"use_raptor": False}}
-
-            # table / picture / one / email / tag
-            return {}
+        if isinstance(chunk_method, str):
+            try:
+                chunk_method = ChunkMethod(chunk_method)
+            except ValueError:
+                raise RAGFlowValidationError(
+                    f"Invalid chunk_method: {chunk_method!r}. "
+                    f"Allowed: {', '.join([m.value for m in ChunkMethod])}"
+                )
 
         # ingestion mode validation
-        if chunk_method and (parse_type or pipeline_id):
+        if chunk_method is not None and (parse_type or pipeline_id):
             raise RAGFlowValidationError(
                 "chunk_method is mutually exclusive with parse_type and pipeline_id"
             )
@@ -135,28 +101,26 @@ class DatasetAPI(BaseAPI):
         if chunk_method is None and parse_type is None:
             chunk_method = ChunkMethod.NAIVE
 
-        # parser_config default
-        if chunk_method and parser_config is None:
-            parser_config = default_parser_config(chunk_method)
+        if chunk_method is not None and parser_config is None:
+            parser_config = self._default_parser_config(chunk_method)
 
-        payload = {
+        payload: dict[str, Any] = {
             "name": name,
             "avatar": avatar,
             "description": description,
-            "permission": permission.value if permission else None,
+            "permission": permission.value,
         }
 
-        if chunk_method:
-            payload["chunk_method"] = chunk_method.value
+        if chunk_method is not None:
+            payload["chunk_method"] =chunk_method.value
             payload["parser_config"] = parser_config or {}
 
-        if parse_type:
+        if parse_type is not None:
             payload["parse_type"] = parse_type
             payload["pipeline_id"] = pipeline_id
 
         payload = self._clean_params(payload)
-
         resp = await self._client.post("/datasets", json=payload)
         resp = await self._handle_response(resp)
 
-        return resp
+        return Dataset.from_raw(resp)

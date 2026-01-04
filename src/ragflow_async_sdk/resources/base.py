@@ -1,7 +1,7 @@
 from typing import Dict, Any
 
-from ragflow_async_sdk.exceptions import RAGFlowAPIError
-from ragflow_async_sdk.http import AsyncHTTPClient
+from ..exceptions import RAGFlowAPIError
+from ..http import AsyncHTTPClient
 
 
 class BaseAPI:
