@@ -1,12 +1,17 @@
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Optional, Dict, Any, Tuple, AsyncGenerator
 
 from .base import BaseAPI
-from ..models.chat import ChatAssistant
+from .mixins import SessionMixin
+from ..models.chat import ChatAssistant, ChatCompletionResult
+from ..models.session import ChatSession
 from ..utils.normalizers import normalize_ids
 from ..utils.validators import require_params
 
 
-class ChatsAPI(BaseAPI):
+class ChatsAPI(SessionMixin[ChatSession], BaseAPI):
+    _parent_type = "chats"
+    _session_model = ChatSession
+
     async def create_chat(
             self,
             name: str,
@@ -102,3 +107,94 @@ class ChatsAPI(BaseAPI):
         chats = [ChatAssistant.from_raw(item) for item in data]
         total = len(chats)
         return chats, total
+
+    async def create_session(
+            self,
+            chat_id: str,
+            *,
+            name: Optional[str] = None,
+            user_id: Optional[str] = None,
+    ) -> ChatSession:
+        """
+        Create a new session under a chat assistant.
+        """
+        return await super().create_session(
+            parent_id=chat_id,
+            name=name,
+            user_id=user_id
+        )
+
+    async def list_sessions(
+            self,
+            chat_id: str,
+            *,
+            page: int = 1,
+            page_size: int = 30,
+            orderby: str = "create_time",
+            desc: bool = True,
+            name: Optional[str] = None,
+            session_id: Optional[str] = None,
+            user_id: Optional[str] = None,
+    ) -> Tuple[List[ChatSession], int]:
+        """
+        List sessions for a chat assistant.
+        """
+        return await super().list_sessions(
+            parent_id=chat_id,
+            page=page,
+            page_size=page_size,
+            orderby=orderby,
+            desc=desc,
+            name=name,
+            session_id=session_id,
+            user_id=user_id,
+        )
+
+    async def update_session(
+            self,
+            chat_id: str,
+            session_id: str,
+            *,
+            name: Optional[str] = None,
+            user_id: Optional[str] = None,
+    ) -> None:
+        """
+        Update a chat session.
+        """
+        await super().update_session(
+            parent_id=chat_id,
+            session_id=session_id,
+            name=name,
+            user_id=user_id
+        )
+
+    async def delete_sessions(
+            self,
+            chat_id: str,
+            session_ids: Optional[str | List[str]] = None,
+    ) -> None:
+        """
+        Delete one or more chat sessions.
+        """
+        await super().delete_sessions(
+            parent_id=chat_id,
+            session_ids=session_ids
+        )
+
+    async def ask(
+            self,
+            chat_id: str,  # 替换 parent_id
+            session_id: str,
+            prompt: str,
+            *,
+            stream: bool = False,
+            **kwargs,
+    ) -> AsyncGenerator[ChatCompletionResult, None] | ChatCompletionResult:
+        return await super().ask(
+            parent_id=chat_id,
+            session_id=session_id,
+            prompt=prompt,
+            session_type="chats",
+            stream=stream,
+            **kwargs
+        )

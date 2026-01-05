@@ -13,39 +13,43 @@ class ChunksAPI(BaseAPI):
     """API for managing document chunks within datasets."""
 
     async def add_chunk(
-            self,
-            dataset_id: str,
-            document_id: str,
-            content: str,
-            important_keywords: Optional[List[str]] = None,
-            questions: Optional[List[str]] = None,
+        self,
+        dataset_id: str,
+        document_id: str,
+        content: str,
+        important_keywords: Optional[List[str]] = None,
+        questions: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Add a chunk to a specific document.
         """
-        require_params(dataset_id=dataset_id, document_id=document_id, content=content)
+        require_params(
+            dataset_id=dataset_id,
+            document_id=document_id,
+            content=content,
+        )
 
         payload: Dict[str, Any] = {
             "content": content,
-            "important_keywords": important_keywords or [],
-            "questions": questions or [],
+            "important_keywords": important_keywords,
+            "questions": questions,
         }
-
         payload = self._normalize_request(payload)
+
         url = f"/datasets/{dataset_id}/documents/{document_id}/chunks"
         resp = await self._client.post(url, json=payload)
         resp = self._handle_response(resp)
         return resp.get("data", {})
 
     async def list_chunks(
-            self,
-            dataset_id: str,
-            document_id: str,
-            *,
-            keywords: Optional[str] = None,
-            page: int = 1,
-            page_size: int = 1024,
-            chunk_id: Optional[str] = None,
+        self,
+        dataset_id: str,
+        document_id: str,
+        *,
+        keywords: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 1024,
+        chunk_id: Optional[str] = None,
     ) -> Tuple[List[Chunk], int]:
         """
         List chunks in a document with optional filters.
@@ -64,25 +68,31 @@ class ChunksAPI(BaseAPI):
         resp = await self._client.get(url, params=params)
         resp = self._handle_response(resp)
 
-        raw_chunks: List[Dict[str, Any]] = resp.get("data", {}).get("chunks", [])
+        data = resp.get("data", {})
+        raw_chunks = data.get("chunks", [])
+        total = data.get("total", 0)
+
         chunks = [Chunk.from_raw(item) for item in raw_chunks]
-        total: int = resp.get("data", {}).get("total", 0)
         return chunks, total
 
     async def update_chunk(
-            self,
-            dataset_id: str,
-            document_id: str,
-            chunk_id: str,
-            *,
-            content: Optional[str] = None,
-            important_keywords: Optional[List[str]] = None,
-            available: Optional[bool] = None,
+        self,
+        dataset_id: str,
+        document_id: str,
+        chunk_id: str,
+        *,
+        content: Optional[str] = None,
+        important_keywords: Optional[List[str]] = None,
+        available: Optional[bool] = None,
     ) -> None:
         """
         Update content or settings for a specific chunk.
         """
-        require_params(dataset_id=dataset_id, document_id=document_id, chunk_id=chunk_id)
+        require_params(
+            dataset_id=dataset_id,
+            document_id=document_id,
+            chunk_id=chunk_id,
+        )
 
         payload: Dict[str, Any] = {
             "content": content,
@@ -90,28 +100,35 @@ class ChunksAPI(BaseAPI):
             "available": available,
         }
         payload = self._normalize_request(payload)
+
         if not payload:
-            raise RAGFlowValidationError("No fields provided to update.")
+            raise RAGFlowValidationError(
+                "At least one field must be provided to update a chunk."
+            )
 
         url = f"/datasets/{dataset_id}/documents/{document_id}/chunks/{chunk_id}"
         resp = await self._client.put(url, json=payload)
         self._handle_response(resp, require_data=False)
 
     async def delete_chunks(
-            self,
-            dataset_id: str,
-            document_id: str,
-            chunk_ids: Optional[Union[str, List[str]]] = None,
+        self,
+        dataset_id: str,
+        document_id: str,
+        *,
+        chunk_ids: Optional[Union[str, List[str]]] = None,
     ) -> None:
         """
         Delete chunks by ID.
 
-        If chunk_ids is None, all chunks are deleted.
+        If chunk_ids is None, all chunks in the document will be deleted.
         """
         require_params(dataset_id=dataset_id, document_id=document_id)
+
         chunk_ids = normalize_ids(chunk_ids, "chunk_ids")
 
-        payload: Dict[str, Any] = {"chunk_ids": chunk_ids}
+        payload: Dict[str, Any] = {
+            "chunk_ids": chunk_ids,
+        }
         payload = self._normalize_request(payload)
 
         url = f"/datasets/{dataset_id}/documents/{document_id}/chunks"

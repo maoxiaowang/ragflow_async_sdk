@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import json
 from enum import Enum
 from typing import Any
 
@@ -67,6 +70,24 @@ class BaseAPI:
             )
 
         return response
+
+    @staticmethod
+    def _parse_sse_line(line: str) -> dict:
+        """
+        Parse a single SSE line, stripping 'data:' prefix and converting to dict.
+        """
+        if line.startswith("data:"):
+            line = line[5:].strip()
+        if not line:
+            return {}
+        try:
+            return json.loads(line)
+        except Exception as e:
+            raise RAGFlowAPIError(
+                message="Failed to parse SSE line as JSON",
+                details=line,
+                status_code=500,
+            ) from e
 
     @staticmethod
     def _normalize_request(data: dict[str, Any]) -> dict[str, Any]:

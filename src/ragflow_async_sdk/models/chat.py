@@ -94,3 +94,52 @@ class ChatAssistant(BaseEntity):
         if isinstance(raw.get("datasets"), dict):
             obj.datasets = [Dataset.from_raw(d) if isinstance(d, dict) else d for d in raw["datasets"]]
         return obj
+
+
+@dataclass
+class ChatCompletionMessage(BaseEntity):
+    role: str
+    content: str
+
+
+@dataclass
+class ChatCompletionReference(BaseEntity):
+    chunk_id: Optional[str] = None
+    document_id: Optional[str] = None
+    dataset_id: Optional[str] = None
+    content: Optional[str] = None
+    score: Optional[float] = None
+
+
+@dataclass
+class ChatCompletionResult(BaseEntity):
+    """
+    Result of a non-streaming chat completion.
+    """
+    answer: Optional[str] = None
+    session_id: Optional[str] = None
+    messages: Optional[List[ChatCompletionMessage]] = None
+    reference: Optional[List[ChatCompletionReference]] = None
+
+    @classmethod
+    def from_raw(cls, raw: Dict[str, Any]) -> Self:
+        obj = cls(
+            answer=raw.get("answer"),
+            session_id=raw.get("session_id"),
+        )
+
+        messages = raw.get("messages")
+        if isinstance(messages, list):
+            obj.messages = [
+                ChatCompletionMessage.from_raw(item)
+                for item in messages
+            ]
+
+        reference = raw.get("reference")
+        if isinstance(reference, list):
+            obj.reference = [
+                ChatCompletionReference.from_raw(item)
+                for item in reference
+            ]
+
+        return obj

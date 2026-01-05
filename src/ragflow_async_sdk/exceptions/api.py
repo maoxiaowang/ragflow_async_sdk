@@ -2,46 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .base import RAGFlowError
 
-class RAGFlowError(Exception):
-    """Base exception for RAGFlow Async SDK."""
-
-
-# -------------------------
-# Pre-request
-# -------------------------
-
-class RAGFlowConfigError(RAGFlowError):
-    """Invalid SDK configuration."""
-
-
-class RAGFlowValidationError(RAGFlowError):
-    """Client-side validation error."""
-
-
-# -------------------------
-# Transport level
-# -------------------------
-
-class RAGFlowTransportError(RAGFlowError):
-    """Network / transport related error."""
-
-    def __init__(self, message: str, *, cause: Exception | None = None):
-        super().__init__(message)
-        self.__cause__ = cause
-
-
-class RAGFlowTimeoutError(RAGFlowTransportError):
-    """Request timeout."""
-
-
-class RAGFlowConnectionError(RAGFlowTransportError):
-    """Connection failed."""
-
-
-# -------------------------
-# API level
-# -------------------------
 
 class RAGFlowAPIError(RAGFlowError):
     """API returned an error response."""

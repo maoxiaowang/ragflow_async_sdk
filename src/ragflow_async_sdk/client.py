@@ -1,10 +1,13 @@
+from .apis.agents import AgentsAPI
+from .apis.system import SystemAPI
 from .exceptions import RAGFlowConfigError
 from .http import AsyncHTTPClient
 from .apis import (
     DatasetAPI,
     DocumentsAPI,
     ChunksAPI,
-    ChatsAPI
+    ChatsAPI,
+    SessionAPI
 )
 
 
@@ -13,23 +16,34 @@ class AsyncRAGFlowClient:
 
     def __init__(
         self,
-        base_url: str,
+        server_url: str,
         api_key: str,
-        timeout: float = 10.0,
+        timeout: float = 5.0,
         api_version: str = "v1",
         **kwargs,
     ):
         if api_version not in ("v1",):
             raise RAGFlowConfigError("API version only supports v1 now")
         headers = {"Authorization": f"Bearer {api_key}", "Accept": "application/json"}
-        base_url = f'{base_url.rstrip()}/api/{api_version}'
+        base_url = f'{server_url.rstrip()}/api/{api_version}'
         self._http = AsyncHTTPClient(base_url, headers=headers, timeout=timeout, **kwargs)
+        self._raw_http = AsyncHTTPClient(server_url, headers={}, timeout=timeout, **kwargs)
 
         # Resource
         self.datasets = DatasetAPI(self._http)
         self.documents = DocumentsAPI(self._http)
         self.chunks = ChunksAPI(self._http)
         self.chats = ChatsAPI(self._http)
+        self.sessions = SessionAPI(self._http)
+        self.agents = AgentsAPI(self._http)
+        self.systems = SystemAPI(self._raw_http)
 
     async def close(self):
         await self._http.close()
+        await self._raw_http.close()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
