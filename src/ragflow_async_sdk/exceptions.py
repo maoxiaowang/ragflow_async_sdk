@@ -16,7 +16,7 @@ class RAGFlowConfigError(RAGFlowError):
 
 
 class RAGFlowValidationError(RAGFlowError):
-    """Invalid RAGFlow validation error."""
+    """Client-side validation error."""
 
 
 # -------------------------

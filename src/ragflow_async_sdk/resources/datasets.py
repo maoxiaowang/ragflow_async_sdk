@@ -6,7 +6,8 @@ from ..models.dataset import Dataset, KnowledgeGraph
 from ..models.task import TaskStatus
 from ..types.ingestion import OrderBy, ChunkMethod
 from ..types.permission import Permission
-from ..utils.validators import normalize_ids
+from ..utils.normalizers import normalize_ids
+from ..utils.validators import require_params
 
 __all__ = [
     "DatasetAPI"
@@ -31,6 +32,8 @@ class DatasetAPI(BaseAPI):
             avatar: str | None = None,
             permission: Permission = Permission.ME,
     ) -> Dataset:
+        require_params(name=name)
+
         if isinstance(chunk_method, str):
             try:
                 chunk_method = ChunkMethod(chunk_method)
@@ -150,6 +153,8 @@ class DatasetAPI(BaseAPI):
         Only provide the fields you want to update. For chunk_method changes,
         parser_config can be provided; otherwise defaults are used.
         """
+        require_params(dataset_id=dataset_id)
+
         # normalize chunk_method
         if chunk_method is not None:
             if isinstance(chunk_method, str):
@@ -237,8 +242,7 @@ class DatasetAPI(BaseAPI):
         Returns:
             KnowledgeGraph instance containing nodes, edges, metadata, mind_map.
         """
-        if not dataset_id:
-            raise RAGFlowValidationError("dataset_id is required")
+        require_params(dataset_id=dataset_id)
 
         url = f"/datasets/{dataset_id}/knowledge_graph"
         resp = await self._client.get(url)
@@ -254,8 +258,7 @@ class DatasetAPI(BaseAPI):
         Returns:
             graphrag_task_id
         """
-        if not dataset_id:
-            raise RAGFlowValidationError("dataset_id is required")
+        require_params(dataset_id=dataset_id)
 
         url = f"/datasets/{dataset_id}/run_graphrag"
         resp = await self._client.post(url)
@@ -279,8 +282,7 @@ class DatasetAPI(BaseAPI):
         Returns:
             TaskStatus instance containing progress, messages, timestamps, etc.
         """
-        if not dataset_id:
-            raise RAGFlowValidationError("dataset_id is required")
+        require_params(dataset_id=dataset_id)
 
         url = f"/datasets/{dataset_id}/trace_graphrag"
         resp = await self._client.get(url)
@@ -298,8 +300,7 @@ class DatasetAPI(BaseAPI):
         Returns:
             True if deletion succeeded.
         """
-        if not dataset_id:
-            raise RAGFlowValidationError("dataset_id is required")
+        require_params(dataset_id=dataset_id)
 
         url = f"/datasets/{dataset_id}/knowledge_graph"
         resp = await self._client.delete(url)
@@ -320,8 +321,7 @@ class DatasetAPI(BaseAPI):
         Returns:
             raptor_task_id
         """
-        if not dataset_id:
-            raise RAGFlowValidationError("dataset_id is required")
+        require_params(dataset_id=dataset_id)
 
         url = f"/datasets/{dataset_id}/run_raptor"
         resp = await self._client.post(url)
@@ -345,8 +345,7 @@ class DatasetAPI(BaseAPI):
         Returns:
             TaskStatus instance containing progress, messages, timestamps, etc.
         """
-        if not dataset_id:
-            raise RAGFlowValidationError("dataset_id is required")
+        require_params(dataset_id=dataset_id)
 
         url = f"/datasets/{dataset_id}/trace_raptor"
         resp = await self._client.get(url)

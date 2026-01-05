@@ -6,37 +6,60 @@ from ..http import AsyncHTTPClient
 
 
 class BaseAPI:
+    """
+    Base class for all RAGFlow API modules.
+    Handles response validation and request normalization.
+    """
 
     def __init__(
             self,
             client: AsyncHTTPClient,
-            auto_parse_datetime=False
     ):
         self._client = client
 
     def _handle_stream_response(self, data: bytes):
+        """
+        Handle streaming responses (SSE / chunked).
+        Subclasses can override this method.
+        """
         ...
 
     @staticmethod
-    def _handle_response(response: dict[str, Any], require_data: bool = True) -> dict[str, Any]:
+    def _handle_response(
+        response: dict[str, Any],
+        *,
+        require_data: bool = True,
+    ) -> dict[str, Any]:
+        """
+        Validate and normalize a standard RAGFlow JSON response.
+
+        This method should ONLY be used for endpoints that return:
+        {
+            "code": 0,
+            "data": ...
+        }
+        """
+        # Response must be a JSON object
         if not isinstance(response, dict):
             raise RAGFlowAPIError(
                 status_code=500,
-                message="RAGFlow response is not a JSON object",
-                details=response
+                message="Invalid RAGFlow response format (expected JSON object)",
+                details=response,
             )
 
         code = response.get("code")
+
+        # RAGFlow business error
         if code != 0:
             raise RAGFlowAPIError(
                 status_code=400,
-                message=response.get("message", "Unknown RAGFlow error"),
+                message=response.get("message", "RAGFlow API error"),
                 code=str(code),
-                details=response
+                details=response,
             )
 
-        data = response.get("data")
-        if data is None and require_data:
+        # "data" field is required by default
+        if require_data and "data" not in response:
             raise RAGFlowAPIError(
                 status_code=500,
                 message="RAGFlow response is empty",

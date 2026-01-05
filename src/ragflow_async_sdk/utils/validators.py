@@ -1,31 +1,16 @@
-from typing import Optional, Union, List
-
 from ragflow_async_sdk.exceptions import RAGFlowValidationError
 
 
-def normalize_ids(ids: Optional[Union[str, List[str]]], param_name: str = "ids") -> Optional[List[str]]:
+def require_params(**params) -> None:
     """
-    Normalize an ID or a list of IDs into a list of strings.
+    Ensure required parameters are provided (not None or empty string).
 
-    Args:
-        ids: A string, a list of strings, or None.
-        param_name: Parameter name for error messages.
-
-    Returns:
-        List of strings or None.
-
-    Raises:
-        RAGFlowValidationError: if the input type is invalid.
+    Example:
+        require_params(dataset_id=dataset_id, document_id=document_id)
     """
-    if ids is None:
-        return None
+    for name, value in params.items():
+        if value is None or value == "":
+            raise RAGFlowValidationError(f"{name} is required")
 
-    if isinstance(ids, str):
-        return [ids]
 
-    if isinstance(ids, list):
-        if not all(isinstance(i, str) for i in ids):
-            raise RAGFlowValidationError(f"All elements in '{param_name}' must be strings")
-        return ids
 
-    raise RAGFlowValidationError(f"'{param_name}' must be a string, a list of strings, or None")
