@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from typing import Any, TypeVar, Type
 from dataclasses import fields, MISSING, is_dataclass
@@ -41,6 +42,22 @@ class BaseEntity:
                 result[field_name] = self._serialize_value(value)
 
         return result
+
+    def to_json(self, full: bool = False, pretty: bool = False, **kwargs) -> str:
+        """
+        Serialize the entity to a JSON string.
+
+        Args:
+            full: If True, serialize all raw fields; otherwise only export fields.
+            pretty: If True, output indented JSON.
+            **kwargs: Additional keyword args passed to json.dumps (e.g., indent=2).
+
+        Returns:
+            str: JSON string representation of the entity.
+        """
+        if pretty:
+            kwargs.setdefault("indent", 2)
+        return json.dumps(self.to_dict(full=full), **kwargs)
 
     def _serialize_value(self, value: Any) -> Any:
         if isinstance(value, Enum):
