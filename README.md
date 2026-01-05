@@ -120,7 +120,20 @@ print(updated_doc.to_dict())
 ### Delete Documents
 
 ```python
-await client.datasets.delete_documents(dataset_id=ds.id, ids=[docs[0]['id']])
+await client.documents.delete_documents(dataset_id=ds.id, ids=[docs[0].id])
+```
+
+### Parse Documents
+```python
+await client.documents.parse_documents(dataset_id=ds.id, ids=doc.id)
+
+# parse all failed documents
+await client.documents.parse_documents(ds.id, [doc.id for doc in docs if doc.run == "FAIL"])
+```
+
+### Stop Parsing Documents
+```python
+await client.documents.stop_parsing_documents(ds.id, doc.id)
 ```
 
 ## Knowledge Graph (GraphRAG) Usage
