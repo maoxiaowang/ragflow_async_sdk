@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Self
+from typing import Any, Optional, Self
 
 from .base import BaseEntity
 
 
+@dataclass(slots=True)
 class Agent(BaseEntity):
     """
     Agent model.
@@ -15,6 +18,8 @@ class Agent(BaseEntity):
         "description",
         "avatar",
         "dsl",
+        "canvas_category",
+        "canvas_type",
         "create_date",
         "create_time",
         "update_date",
@@ -27,7 +32,9 @@ class Agent(BaseEntity):
     description: Optional[str] = None
     avatar: Optional[str] = None
 
-    dsl: Optional[Dict[str, Any]] = None
+    dsl: Optional[dict[str, Any]] = None
+    canvas_category: Optional[str] = None
+    canvas_type: Optional[str] = None
 
     create_date: Optional[str] = None
     create_time: Optional[int] = None
@@ -45,7 +52,7 @@ class AgentStep(BaseEntity):
     role: Optional[str] = None  # system / agent / tool
     content: Optional[str] = None
     tool_name: Optional[str] = None
-    tool_input: Optional[Dict[str, Any]] = None
+    tool_input: Optional[dict[str, Any]] = None
     tool_output: Optional[Any] = None
 
 
@@ -57,10 +64,17 @@ class AgentCompletionResult(BaseEntity):
     id: Optional[str] = None
     answer: Optional[str] = None
 
-    steps: Optional[List[AgentStep]] = None
-    usage: Optional[Dict[str, Any]] = None
+    steps: Optional[list[AgentStep]] = None
+    usage: Optional[dict[str, Any]] = None
 
     create_time: Optional[int] = None
+
+    __export_fields__ = (
+        "id",
+        "answer",
+        "steps",
+        "create_time",
+    )
 
     @classmethod
     def from_raw(cls, raw: dict) -> Self:

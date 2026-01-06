@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any
 
 from .base import BaseEntity
 from ..types.ingestion import ChunkMethod
@@ -26,13 +27,13 @@ class Document(BaseEntity):
     chunk_method: Optional[ChunkMethod | str] = None
     chunk_count: Optional[int] = None
     token_count: Optional[int] = None
-    parser_config: Optional[Dict[str, Any]] = None
-    meta_fields: Optional[Dict[str, Any]] = None
+    parser_config: Optional[dict[str, Any]] = None
+    meta_fields: Optional[dict[str, Any]] = None
     pipeline_id: Optional[str] = None
     thumbnail: Optional[str] = None
 
     progress: Optional[float] = None
-    progress_msg: Optional[List[str]] = None
+    progress_msg: Optional[list[str]] = None
     process_begin_at: Optional[str] = None
     process_duration: Optional[float] = None
     enabled: Optional[int] = None  # 1 available, 0 unavailable
@@ -44,8 +45,6 @@ class Document(BaseEntity):
         "type",
         "location",
         "status",
-        "run",
-        "suffix",
         "size",
         "created_by",
         "create_date",
@@ -55,10 +54,7 @@ class Document(BaseEntity):
         "chunk_method",
         "chunk_count",
         "token_count",
-        "parser_config",
-        "meta_fields",
-        "pipeline_id",
         "thumbnail",
-        "progress",
+        "pipeline_id",
         "enabled",
     )

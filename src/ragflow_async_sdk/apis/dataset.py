@@ -1,47 +1,54 @@
-from typing import Optional, Any, List, Dict, Tuple
+from typing import Optional, Any
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
+from ..exceptions.api import RAGFlowConflictError
 from ..models.dataset import Dataset, KnowledgeGraph
 from ..models.task import TaskStatus
-from ..types.ingestion import OrderBy, ChunkMethod
-from ..types.permission import Permission
+from ..types import OrderBy, ChunkMethod, Permission
 from ..utils.normalizers import normalize_ids
-from ..utils.validators import require_params
-
-__all__ = [
-    "DatasetAPI"
-]
+from ..utils.validators import require_params, validate_enum
 
 
 class DatasetAPI(BaseAPI):
-
-    # =========================
-    # Dataset
-    # =========================
+    """API for managing datasets."""
 
     async def create_dataset(
-            self,
-            name: str,
-            *,
-            chunk_method: ChunkMethod | str | None = None,
-            parser_config: dict | None = None,
-            parse_type: str | None = None,
-            pipeline_id: str | None = None,
-            description: str | None = None,
-            avatar: str | None = None,
-            permission: Permission = Permission.ME,
+        self,
+        name: str,
+        *,
+        chunk_method: ChunkMethod | str | None = ChunkMethod.NAIVE,
+        parser_config: dict | None = None,
+        parse_type: str | None = None,
+        pipeline_id: str | None = None,
+        description: str | None = None,
+        avatar: str | None = None,
+        permission: Permission | str = Permission.ME,
     ) -> Dataset:
+        """
+        Create a new dataset.
+
+        Args:
+            name: Dataset name.
+            chunk_method: Chunking method, mutually exclusive with parse_type/pipeline_id.
+            parser_config: Parser configuration for the dataset.
+            parse_type: Parsing type (used with pipeline_id).
+            pipeline_id: Pipeline ID (used with parse_type).
+            description: Optional description.
+            avatar: Optional avatar URL.
+            permission: Access permission for the dataset.
+
+        Returns:
+            Dataset instance of the created dataset.
+
+        Raises:
+            RAGFlowValidationError: If parameters are invalid.
+            RAGFlowAPIError: If creation fails.
+        """
         require_params(name=name)
 
-        if isinstance(chunk_method, str):
-            try:
-                chunk_method = ChunkMethod(chunk_method)
-            except ValueError:
-                raise RAGFlowValidationError(
-                    f"Invalid chunk_method: {chunk_method!r}. "
-                    f"Allowed: {', '.join([m.value for m in ChunkMethod])}"
-                )
+        chunk_method = validate_enum(chunk_method, ChunkMethod, "chunk_method")
+        permission = validate_enum(permission, Permission, "permission")
 
         # ingestion mode validation
         if chunk_method is not None and (parse_type or pipeline_id):
@@ -65,11 +72,11 @@ class DatasetAPI(BaseAPI):
             "name": name,
             "avatar": avatar,
             "description": description,
-            "permission": permission.value,
+            "permission": permission,
         }
 
         if chunk_method is not None:
-            payload["chunk_method"] = chunk_method.value
+            payload["chunk_method"] = chunk_method
             payload["parser_config"] = parser_config or {}
 
         if parse_type is not None:
@@ -84,36 +91,8 @@ class DatasetAPI(BaseAPI):
 
         return Dataset.from_raw(data)
 
-    async def list_datasets(
-            self,
-            *,
-            page: int = 1,
-            page_size: int = 30,
-            order_by: OrderBy = OrderBy.CREATE_TIME,
-            desc: bool = True,
-            dataset_id: Optional[str] = None,
-            name: Optional[str] = None,
-    ) -> Tuple[List[Dataset], int]:
-        params = {
-            "page": page,
-            "page_size": page_size,
-            "orderby": order_by,
-            "desc": desc,
-            "id": dataset_id,
-            "name": name,
-        }
-        params = self._normalize_request(params)
-        resp = await self._client.get("/datasets", params=params)
-        resp = self._handle_response(resp)
-
-        raw_items: List[Dict[str, Any]] = resp.get("data", [])
-        total = resp.get("total_datasets", 0)
-
-        datasets = [Dataset.from_raw(item) for item in raw_items]
-        return datasets, total
-
     @staticmethod
-    def _default_parser_config(method: ChunkMethod | str) -> Dict:
+    def _default_parser_config(method: ChunkMethod) -> dict:
         if method is ChunkMethod.NAIVE:
             return {
                 "chunk_token_num": 512,
@@ -134,6 +113,95 @@ class DatasetAPI(BaseAPI):
 
         return {}
 
+    async def list_datasets(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 30,
+        order_by: OrderBy | str = OrderBy.CREATE_TIME,
+        desc: bool = True,
+        dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> tuple[list[Dataset], int]:
+        """
+        List datasets with optional filters.
+
+        Args:
+            page: Page number.
+            page_size: Items per page.
+            order_by: Field to order by.
+            desc: Descending order if True.
+            dataset_id: Optional dataset ID filter.
+            name: Optional dataset name filter.
+
+        Returns:
+            Tuple of list of Dataset instances and total count.
+
+        Raises:
+            RAGFlowAPIError: If listing fails.
+        """
+        params = {
+            "page": page,
+            "page_size": page_size,
+            "orderby": order_by,
+            "desc": desc,
+            "id": dataset_id,
+            "name": name,
+        }
+        params = self._normalize_request(params)
+        resp = await self._client.get("/datasets", params=params)
+        resp = self._handle_response(resp)
+
+        raw_items: list[dict[str, Any]] = resp.get("data", [])
+        total = resp.get("total_datasets", 0)
+
+        datasets = [Dataset.from_raw(item) for item in raw_items]
+        return datasets, total
+
+    async def get_dataset(
+            self,
+            *,
+            dataset_id: Optional[str] = None,
+            name: Optional[str] = None,
+    ) -> Optional[Dataset]:
+        """
+        Get a single dataset by ID or name.
+
+        Exactly one of dataset_id or name must be provided.
+
+        Args:
+            dataset_id: Dataset ID.
+            name: Dataset name.
+
+        Returns:
+            Dataset instance if found, otherwise None.
+
+        Raises:
+            RAGFlowValidationError: If both or neither parameters are provided.
+            RAGFlowConflictError: If multiple datasets match the query.
+        """
+        if not dataset_id and not name:
+            raise RAGFlowValidationError("Either dataset_id or name must be provided")
+
+        if dataset_id and name:
+            raise RAGFlowValidationError("Only one of dataset_id or name can be provided")
+
+        datasets, _ = await self.list_datasets(
+            page=1,
+            page_size=2,
+            dataset_id=dataset_id,
+            name=name,
+        )
+
+        if not datasets:
+            return None
+
+        if len(datasets) > 1:
+            key = f"id={dataset_id}" if dataset_id else f"name={name}"
+            raise RAGFlowConflictError(f"Multiple datasets found for {key}")
+
+        return datasets[0]
+
     async def update_dataset(
             self,
             dataset_id: str,
@@ -145,52 +213,48 @@ class DatasetAPI(BaseAPI):
             permission: Optional[Permission | str] = None,
             pagerank: Optional[int] = None,
             chunk_method: Optional[ChunkMethod | str] = None,
-            parser_config: Optional[Dict[str, Any]] = None,
+            parser_config: Optional[dict[str, Any]] = None,
     ) -> None:
         """
-        Update a dataset's configuration.
+        Update dataset fields.
 
-        Only provide the fields you want to update. For chunk_method changes,
-        parser_config can be provided; otherwise defaults are used.
+        Only provide fields to be updated.
+
+        Args:
+            dataset_id: Target dataset ID.
+            name: Optional new name.
+            avatar: Optional avatar URL.
+            description: Optional description.
+            embedding_model: Optional embedding model.
+            permission: Optional access permission.
+            pagerank: Optional pagerank value.
+            chunk_method: Optional chunk method.
+            parser_config: Optional parser configuration.
+
+        Raises:
+            RAGFlowValidationError: If dataset_id is missing or parameters invalid.
+            RAGFlowAPIError: If update fails.
         """
         require_params(dataset_id=dataset_id)
 
-        # normalize chunk_method
-        if chunk_method is not None:
-            if isinstance(chunk_method, str):
-                try:
-                    chunk_method = ChunkMethod(chunk_method)
-                except ValueError:
-                    raise RAGFlowValidationError(
-                        f"Invalid chunk_method: {chunk_method!r}. "
-                        f"Allowed: {[m.value for m in ChunkMethod]}"
-                    )
+        chunk_method = validate_enum(chunk_method, ChunkMethod, "chunk_method")
+        permission = validate_enum(permission, Permission, "permission")
 
         # parser_config default for chunk_method
         if chunk_method is not None and parser_config is None:
             parser_config = self._default_parser_config(chunk_method)
-
-        # normalize permission
-        if isinstance(permission, str):
-            try:
-                permission = Permission(permission)
-            except ValueError:
-                raise RAGFlowValidationError(
-                    f"Invalid permission: {permission!r}. "
-                    f"Allowed: {[p.value for p in Permission]}"
-                )
 
         payload: dict[str, Any] = {
             "name": name,
             "avatar": avatar,
             "description": description,
             "embedding_model": embedding_model,
-            "permission": permission.value if permission else None,
+            "permission": permission,
             "pagerank": pagerank,
         }
 
         if chunk_method is not None:
-            payload["chunk_method"] = chunk_method.value
+            payload["chunk_method"] = chunk_method
             payload["parser_config"] = parser_config or {}
 
         payload = self._normalize_request(payload)
@@ -204,21 +268,21 @@ class DatasetAPI(BaseAPI):
 
     async def delete_datasets(
             self,
-            ids: Optional[str | List[str]] = None,
+            ids: Optional[str | list[str]] = None,
     ) -> None:
         """
         Delete datasets by ID.
 
         Args:
-            ids: List of dataset IDs to delete.
+            ids: Dataset IDs to delete.
                  - None: delete all datasets
-                 - []: delete nothing
-                 - [id1, id2]: delete specified datasets
+                 - []: delete none
+                 - [id1, id2]: delete specific datasets
 
         Raises:
-            RAGFlowAPIError: if deletion fails
+            RAGFlowAPIError: If deletion fails.
         """
-        payload: dict[str, Any] = {"ids": normalize_ids(ids)}
+        payload = {"ids": normalize_ids(ids)}
         payload = self._normalize_request(payload)
 
         if "ids" not in payload:
@@ -228,10 +292,6 @@ class DatasetAPI(BaseAPI):
         resp = await self._client.delete("/datasets", json=payload)
         self._handle_response(resp, require_data=False)
 
-    # =========================
-    # Knowledge Graph
-    # =========================
-
     async def get_knowledge_graph(self, dataset_id: str) -> KnowledgeGraph:
         """
         Retrieve the knowledge graph of a dataset.
@@ -240,7 +300,11 @@ class DatasetAPI(BaseAPI):
             dataset_id: Target dataset ID.
 
         Returns:
-            KnowledgeGraph instance containing nodes, edges, metadata, mind_map.
+            KnowledgeGraph instance containing nodes, edges, metadata, and mind map.
+
+        Raises:
+            RAGFlowValidationError: If dataset_id is not provided.
+            RAGFlowAPIError: If retrieval fails.
         """
         require_params(dataset_id=dataset_id)
 
@@ -253,10 +317,17 @@ class DatasetAPI(BaseAPI):
 
     async def construct_knowledge_graph(self, dataset_id: str) -> str:
         """
-        Run GraphRAG (knowledge graph) construction for a dataset.
+        Run GraphRAG construction for a dataset.
+
+        Args:
+            dataset_id: Target dataset ID.
 
         Returns:
-            graphrag_task_id
+            Graphrag task ID.
+
+        Raises:
+            RAGFlowValidationError: If dataset_id is missing.
+            RAGFlowAPIError: If task creation fails or response is invalid.
         """
         require_params(dataset_id=dataset_id)
 
@@ -277,10 +348,17 @@ class DatasetAPI(BaseAPI):
 
     async def get_graphrag_status(self, dataset_id: str) -> TaskStatus:
         """
-        Get the knowledge graph construction status.
+        Get the status of knowledge graph construction.
+
+        Args:
+            dataset_id: Target dataset ID.
 
         Returns:
-            TaskStatus instance containing progress, messages, timestamps, etc.
+            TaskStatus instance with progress, messages, and timestamps.
+
+        Raises:
+            RAGFlowValidationError: If dataset_id is missing.
+            RAGFlowAPIError: If status retrieval fails.
         """
         require_params(dataset_id=dataset_id)
 
@@ -297,8 +375,9 @@ class DatasetAPI(BaseAPI):
         Args:
             dataset_id: Target dataset ID.
 
-        Returns:
-            True if deletion succeeded.
+        Raises:
+            RAGFlowValidationError: If dataset_id is missing.
+            RAGFlowAPIError: If deletion fails or response is invalid.
         """
         require_params(dataset_id=dataset_id)
 
@@ -318,8 +397,15 @@ class DatasetAPI(BaseAPI):
         """
         Run RAPTOR construction for a dataset.
 
+        Args:
+            dataset_id: Target dataset ID.
+
         Returns:
-            raptor_task_id
+            Raptor task ID.
+
+        Raises:
+            RAGFlowValidationError: If dataset_id is missing.
+            RAGFlowAPIError: If task creation fails or response is invalid.
         """
         require_params(dataset_id=dataset_id)
 
@@ -340,10 +426,17 @@ class DatasetAPI(BaseAPI):
 
     async def get_raptor_status(self, dataset_id: str) -> TaskStatus:
         """
-        Get the RAPTOR construction status.
+        Get the status of RAPTOR construction.
+
+        Args:
+            dataset_id: Target dataset ID.
 
         Returns:
-            TaskStatus instance containing progress, messages, timestamps, etc.
+            TaskStatus instance with progress, messages, and timestamps.
+
+        Raises:
+            RAGFlowValidationError: If dataset_id is missing.
+            RAGFlowAPIError: If status retrieval fails.
         """
         require_params(dataset_id=dataset_id)
 

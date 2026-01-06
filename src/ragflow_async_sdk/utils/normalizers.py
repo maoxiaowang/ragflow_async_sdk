@@ -1,9 +1,9 @@
-from typing import Optional, Union, List
+from typing import Optional, Union
 
 from ragflow_async_sdk.exceptions import RAGFlowValidationError
 
 
-def normalize_ids(ids: Optional[Union[str, List[str]]], param_name: str = "ids") -> Optional[List[str]]:
+def normalize_ids(ids: Optional[Union[str, list[str]]], param_name: str = "ids") -> Optional[list[str]]:
     """
     Normalize an ID or a list of IDs into a list of strings.
 

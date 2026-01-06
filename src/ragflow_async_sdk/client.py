@@ -1,13 +1,15 @@
-from .apis.agents import AgentsAPI
+from .apis.agent import AgentAPI
+from .apis.file import FileAPI
 from .apis.system import SystemAPI
 from .exceptions import RAGFlowConfigError
 from .http import AsyncHTTPClient
 from .apis import (
     DatasetAPI,
-    DocumentsAPI,
-    ChunksAPI,
-    ChatsAPI,
-    SessionAPI
+    DocumentAPI,
+    ChunkAPI,
+    ChatAPI,
+    SessionAPI,
+    FileAPI
 )
 
 
@@ -31,12 +33,13 @@ class AsyncRAGFlowClient:
 
         # Resource
         self.datasets = DatasetAPI(self._http)
-        self.documents = DocumentsAPI(self._http)
-        self.chunks = ChunksAPI(self._http)
-        self.chats = ChatsAPI(self._http)
+        self.documents = DocumentAPI(self._http)
+        self.chunks = ChunkAPI(self._http)
+        self.chats = ChatAPI(self._http)
         self.sessions = SessionAPI(self._http)
-        self.agents = AgentsAPI(self._http)
+        self.agents = AgentAPI(self._http)
         self.systems = SystemAPI(self._raw_http)
+        self.files = FileAPI(self._http)
 
     async def close(self):
         await self._http.close()

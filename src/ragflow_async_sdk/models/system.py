@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from .base import BaseEntity
 
@@ -16,7 +18,6 @@ class SystemHealth(BaseEntity):
         "redis",
         "doc_engine",
         "storage",
-        "_meta",
     )
 
     status: Optional[str] = None
@@ -28,4 +29,4 @@ class SystemHealth(BaseEntity):
     storage: Optional[str] = None
 
     # detailed diagnostic info
-    _meta: Optional[Dict[str, Any]] = None
+    _meta: Optional[dict[str, Any]] = None

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError
@@ -6,10 +6,8 @@ from ..models.chunk import Chunk
 from ..utils.normalizers import normalize_ids
 from ..utils.validators import require_params
 
-__all__ = ["ChunksAPI"]
 
-
-class ChunksAPI(BaseAPI):
+class ChunkAPI(BaseAPI):
     """API for managing document chunks within datasets."""
 
     async def add_chunk(
@@ -17,19 +15,25 @@ class ChunksAPI(BaseAPI):
         dataset_id: str,
         document_id: str,
         content: str,
-        important_keywords: Optional[List[str]] = None,
-        questions: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        important_keywords: Optional[list[str]] = None,
+        questions: Optional[list[str]] = None,
+    ) -> dict[str, Any]:
         """
-        Add a chunk to a specific document.
-        """
-        require_params(
-            dataset_id=dataset_id,
-            document_id=document_id,
-            content=content,
-        )
+        Add a new chunk to a specific document.
 
-        payload: Dict[str, Any] = {
+        Args:
+            dataset_id: Dataset containing the document.
+            document_id: Target document ID.
+            content: Text content of the chunk.
+            important_keywords: Optional list of keywords for chunk importance.
+            questions: Optional list of questions associated with the chunk.
+
+        Returns:
+            dict: Added chunk data.
+        """
+        require_params(dataset_id=dataset_id, document_id=document_id, content=content)
+
+        payload = {
             "content": content,
             "important_keywords": important_keywords,
             "questions": questions,
@@ -50,13 +54,24 @@ class ChunksAPI(BaseAPI):
         page: int = 1,
         page_size: int = 1024,
         chunk_id: Optional[str] = None,
-    ) -> Tuple[List[Chunk], int]:
+    ) -> tuple[list[Chunk], int]:
         """
         List chunks in a document with optional filters.
+
+        Args:
+            dataset_id: Dataset containing the document.
+            document_id: Target document ID.
+            keywords: Optional search keywords.
+            page: Page number.
+            page_size: Number of chunks per page.
+            chunk_id: Optional filter by specific chunk ID.
+
+        Returns:
+            Tuple of (list of Chunk objects, total count).
         """
         require_params(dataset_id=dataset_id, document_id=document_id)
 
-        params: Dict[str, Any] = {
+        params = {
             "keywords": keywords,
             "page": page,
             "page_size": page_size,
@@ -82,19 +97,26 @@ class ChunksAPI(BaseAPI):
         chunk_id: str,
         *,
         content: Optional[str] = None,
-        important_keywords: Optional[List[str]] = None,
+        important_keywords: Optional[list[str]] = None,
         available: Optional[bool] = None,
     ) -> None:
         """
         Update content or settings for a specific chunk.
-        """
-        require_params(
-            dataset_id=dataset_id,
-            document_id=document_id,
-            chunk_id=chunk_id,
-        )
 
-        payload: Dict[str, Any] = {
+        Args:
+            dataset_id: Dataset containing the document.
+            document_id: Document ID.
+            chunk_id: Chunk ID to update.
+            content: New content for the chunk.
+            important_keywords: Updated list of important keywords.
+            available: Whether the chunk is available (True/False).
+
+        Raises:
+            RAGFlowValidationError: If no fields are provided to update.
+        """
+        require_params(dataset_id=dataset_id, document_id=document_id, chunk_id=chunk_id)
+
+        payload = {
             "content": content,
             "important_keywords": important_keywords,
             "available": available,
@@ -102,9 +124,7 @@ class ChunksAPI(BaseAPI):
         payload = self._normalize_request(payload)
 
         if not payload:
-            raise RAGFlowValidationError(
-                "At least one field must be provided to update a chunk."
-            )
+            raise RAGFlowValidationError("At least one field must be provided to update a chunk.")
 
         url = f"/datasets/{dataset_id}/documents/{document_id}/chunks/{chunk_id}"
         resp = await self._client.put(url, json=payload)
@@ -115,20 +135,21 @@ class ChunksAPI(BaseAPI):
         dataset_id: str,
         document_id: str,
         *,
-        chunk_ids: Optional[Union[str, List[str]]] = None,
+        chunk_ids: Optional[str | list[str]] = None,
     ) -> None:
         """
         Delete chunks by ID.
 
-        If chunk_ids is None, all chunks in the document will be deleted.
+        Args:
+            dataset_id: Dataset containing the document.
+            document_id: Document ID.
+            chunk_ids: List of chunk IDs to delete. If None, deletes all chunks.
+
         """
         require_params(dataset_id=dataset_id, document_id=document_id)
 
         chunk_ids = normalize_ids(chunk_ids, "chunk_ids")
-
-        payload: Dict[str, Any] = {
-            "chunk_ids": chunk_ids,
-        }
+        payload = {"chunk_ids": chunk_ids}
         payload = self._normalize_request(payload)
 
         url = f"/datasets/{dataset_id}/documents/{document_id}/chunks"
@@ -140,7 +161,7 @@ class ChunksAPI(BaseAPI):
         Retrieve a metadata summary for all documents in a dataset.
 
         Args:
-            dataset_id: Target dataset ID.
+            dataset_id: Dataset ID.
 
         Returns:
             dict: Metadata summary.
@@ -153,32 +174,31 @@ class ChunksAPI(BaseAPI):
         return resp.get("data", {}).get("summary", {})
 
     async def update_metadata(
-            self,
-            dataset_id: str,
-            *,
-            selector: Optional[dict] = None,
-            updates: Optional[List[dict]] = None,
-            deletes: Optional[List[dict]] = None,
+        self,
+        dataset_id: str,
+        *,
+        selector: Optional[dict] = None,
+        updates: Optional[list[dict]] = None,
+        deletes: Optional[list[dict]] = None,
     ) -> dict[str, int]:
         """
-        Batch update or delete document-level metadata within a dataset.
+        Batch update or delete document-level metadata.
 
         Args:
-            dataset_id: Target dataset ID.
-            selector: Optional selector dict, e.g., {"document_ids": [...], "metadata_condition": {...}}
-            updates: Optional list of metadata updates, each {"key": str, "match": str, "value": str}.
-            deletes: Optional list of metadata deletions, each {"key": str, "value": Optional[str]}.
+            dataset_id: Dataset ID.
+            selector: Optional filter, e.g., {"document_ids": [...], "metadata_condition": {...}}.
+            updates: List of metadata updates, each {"key": str, "match": str, "value": str}.
+            deletes: List of metadata deletions, each {"key": str, "value": Optional[str]}.
 
         Returns:
             dict: {"updated": int, "matched_docs": int}
+
+        Raises:
+            RAGFlowValidationError: If no updates or deletes are provided.
         """
         require_params(dataset_id=dataset_id)
 
-        payload: Dict[str, Any] = {
-            "selector": selector,
-            "updates": updates,
-            "deletes": deletes,
-        }
+        payload = {"selector": selector, "updates": updates, "deletes": deletes}
         payload = self._normalize_request(payload)
 
         if not payload:
@@ -190,46 +210,49 @@ class ChunksAPI(BaseAPI):
         return resp.get("data", {})
 
     async def retrieve_chunks(
-            self,
-            question: str,
-            *,
-            dataset_ids: Optional[Union[str, List[str]]] = None,
-            document_ids: Optional[Union[str, List[str]]] = None,
-            page: int = 1,
-            page_size: int = 30,
-            similarity_threshold: float = 0.2,
-            vector_similarity_weight: float = 0.3,
-            top_k: int = 1024,
-            rerank_id: Optional[str] = None,
-            keyword: bool = False,
-            highlight: bool = False,
-            cross_languages: Optional[List[str]] = None,
-            metadata_condition: Optional[dict] = None,
-            use_kg: bool = False,
-            toc_enhance: bool = False,
+        self,
+        question: str,
+        *,
+        dataset_ids: Optional[Union[str, list[str]]] = None,
+        document_ids: Optional[Union[str, list[str]]] = None,
+        page: int = 1,
+        page_size: int = 30,
+        similarity_threshold: float = 0.2,
+        vector_similarity_weight: float = 0.3,
+        top_k: int = 1024,
+        rerank_id: Optional[str] = None,
+        keyword: bool = False,
+        highlight: bool = False,
+        cross_languages: Optional[list[str]] = None,
+        metadata_condition: Optional[dict] = None,
+        use_kg: bool = False,
+        toc_enhance: bool = False,
     ) -> dict[str, Any]:
         """
-        Retrieve chunks from specified datasets or documents.
+        Retrieve chunks from datasets or documents based on query.
 
         Args:
-            question: User query or keywords (required).
+            question: Query string or keywords (required).
             dataset_ids: Dataset IDs to search.
             document_ids: Document IDs to search.
             page: Page number.
-            page_size: Number of chunks per page.
+            page_size: Chunks per page.
             similarity_threshold: Minimum similarity score.
             vector_similarity_weight: Weight of vector similarity.
-            top_k: Number of chunks for vector similarity computation.
-            rerank_id: Rerank model ID.
+            top_k: Number of chunks considered for vector computation.
+            rerank_id: Optional rerank model ID.
             keyword: Enable keyword-based matching.
-            highlight: Enable highlighting of matched terms.
-            cross_languages: List of target languages for keyword translation.
+            highlight: Highlight matched terms.
+            cross_languages: Target languages for translation.
             metadata_condition: Metadata filter conditions.
             use_kg: Enable knowledge graph multi-hop search.
-            toc_enhance: Enable table of contents enhanced search.
+            toc_enhance: Enable table-of-contents enhanced search.
 
         Returns:
-            dict: Retrieved chunks, document aggregations, total count.
+            dict: Retrieved chunks, document aggregations, and total count.
+
+        Raises:
+            RAGFlowValidationError: If question is empty or dataset/document IDs are missing.
         """
         require_params(question=question)
 
@@ -239,7 +262,7 @@ class ChunksAPI(BaseAPI):
         if not dataset_ids and not document_ids:
             raise RAGFlowValidationError("Either 'dataset_ids' or 'document_ids' must be provided.")
 
-        payload: Dict[str, Any] = {
+        payload = {
             "question": question,
             "dataset_ids": dataset_ids,
             "document_ids": document_ids,

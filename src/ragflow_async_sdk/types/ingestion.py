@@ -14,8 +14,3 @@ class ChunkMethod(str, Enum):
     QA = "qa"
     TABLE = "table"
     TAG = "tag"
-
-
-class OrderBy(str, Enum):
-    CREATE_TIME = "create_time"
-    UPDATE_TIME = "update_time"

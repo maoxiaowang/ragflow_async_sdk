@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional
 
 from ..models.base import BaseEntity
 
@@ -15,8 +17,8 @@ class Chunk(BaseEntity):
     image_id: Optional[str] = None
     create_time: Optional[str] = None
     create_timestamp: Optional[float] = None
-    important_keywords: Optional[List[str]] = None
-    positions: Optional[List[str]] = None
+    important_keywords: Optional[list[str]] = None
+    positions: Optional[list[str]] = None
 
     __export_fields__ = (
         "id",

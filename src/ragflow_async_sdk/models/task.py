@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -33,11 +35,4 @@ class TaskStatus(BaseEntity):
         "create_time",
         "update_date",
         "update_time",
-        "process_duration",
-        "retry_count",
-        "from_page",
-        "to_page",
-        "chunk_ids",
-        "digest",
-        "doc_id",
     )

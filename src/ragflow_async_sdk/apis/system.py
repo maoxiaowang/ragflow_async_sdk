@@ -3,16 +3,19 @@ from ragflow_async_sdk.models.system import SystemHealth
 
 
 class SystemAPI(BaseAPI):
+    """
+    System-related API endpoints.
+    """
 
     async def healthz(self) -> SystemHealth:
         """
-        Check system health status.
+        Check the health status of the system.
 
-        This endpoint does not require authorization.
+        This endpoint does not require authentication.
+
+        Returns:
+            SystemHealth: Parsed system health information.
         """
-        resp = await self._client.raw_get(
-            "/v1/system/healthz",
-        )
-
+        resp = await self._client.raw_get("/v1/system/healthz")
         data = resp.json()
         return SystemHealth.from_raw(data)

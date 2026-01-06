@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Optional, List, Any, Dict
+from typing import Optional, Any, Self
 
 from ..models.base import BaseEntity
 
@@ -61,7 +63,7 @@ class KGNode(BaseEntity):
 
     description: Optional[str] = None
     pagerank: Optional[float] = None
-    source_id: List[str] = field(default_factory=list)
+    source_id: list[str] = field(default_factory=list)
 
     __export_fields__ = (
         "id",
@@ -81,9 +83,9 @@ class KGEdge(BaseEntity):
     target: str
 
     description: Optional[str] = None
-    keywords: List[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
     weight: Optional[float] = None
-    source_id: List[str] = field(default_factory=list)
+    source_id: list[str] = field(default_factory=list)
 
     __export_fields__ = (
         "src_id",
@@ -99,13 +101,13 @@ class KGEdge(BaseEntity):
 
 @dataclass(slots=True)
 class KnowledgeGraph(BaseEntity):
-    nodes: List[KGNode]
-    edges: List[KGEdge]
+    nodes: list[KGNode]
+    edges: list[KGEdge]
 
     directed: bool = False
     multigraph: bool = False
-    graph_info: Dict[str, Any] = field(default_factory=dict)
-    mind_map: Dict[str, Any] = field(default_factory=dict)
+    graph_info: dict[str, Any] = field(default_factory=dict)
+    mind_map: dict[str, Any] = field(default_factory=dict)
 
     __export_fields__ = (
         "nodes",
@@ -117,7 +119,7 @@ class KnowledgeGraph(BaseEntity):
     )
 
     @classmethod
-    def from_raw(cls, raw: dict[str, Any]) -> "KnowledgeGraph":
+    def from_raw(cls, raw: dict[str, Any]) -> Self:
         data = raw.get("graph", {})
         nodes = [KGNode.from_raw(n) for n in data.get("nodes", [])]
         edges = [KGEdge.from_raw(e) for e in data.get("edges", [])]

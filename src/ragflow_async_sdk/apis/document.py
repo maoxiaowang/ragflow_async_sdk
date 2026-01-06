@@ -1,33 +1,31 @@
 from json import JSONDecodeError
-from typing import List, Optional, Dict, Any, Tuple
+from typing import Optional, Any
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
 from ..models.document import Document
-from ..types.ingestion import ChunkMethod
-from ..utils.validators import require_params
+from ..types import OrderBy, ChunkMethod
+from ..utils.validators import require_params, validate_enum
 from ..utils.normalizers import normalize_ids
 
-__all__ = ["DocumentsAPI"]
 
-
-class DocumentsAPI(BaseAPI):
+class DocumentAPI(BaseAPI):
+    """API for managing documents."""
 
     async def upload_documents(
-            self,
-            dataset_id: str,
-            files: List[Tuple[str, bytes, str]],
-    ) -> Tuple[List[Dict[str, Any]], int]:
+        self,
+        dataset_id: str,
+        files: list[tuple[str, bytes, str]],
+    ) -> tuple[list[dict[str, Any]], int]:
         """
-        Upload multiple documents to a dataset using file bytes.
+        Upload multiple documents to a dataset.
 
         Args:
             dataset_id: Target dataset ID.
-            files: List of files to upload. Each file is a tuple:
-                (filename: str, content: bytes, content_type: str)
+            files: List of files to upload, each as (filename, content_bytes, content_type).
 
         Returns:
-            Tuple of (uploaded_docs, count)
+            Tuple containing the list of uploaded documents and the number of documents.
         """
         require_params(dataset_id=dataset_id)
 
@@ -35,7 +33,6 @@ class DocumentsAPI(BaseAPI):
             raise RAGFlowValidationError("No files provided for upload")
 
         files_to_send = [("file", f) for f in files]
-
         resp = await self._client.post(
             f"/datasets/{dataset_id}/documents",
             files=files_to_send,
@@ -45,39 +42,45 @@ class DocumentsAPI(BaseAPI):
         return docs, len(docs)
 
     async def update_document(
-            self,
-            dataset_id: str,
-            document_id: str,
-            *,
-            name: Optional[str] = None,
-            meta_fields: Optional[Dict[str, Any]] = None,
-            chunk_method: Optional[str | ChunkMethod] = None,
-            parser_config: Optional[Dict[str, Any]] = None,
-            enabled: Optional[int] = None,
+        self,
+        dataset_id: str,
+        document_id: str,
+        *,
+        name: Optional[str] = None,
+        meta_fields: Optional[dict[str, Any]] = None,
+        chunk_method: Optional[str | ChunkMethod] = None,
+        parser_config: Optional[dict[str, Any]] = None,
+        enabled: Optional[int] = None,
     ) -> Document:
         """
-        Update document metadata or parser configuration.
+        Update a document's metadata or parsing configuration.
+
+        Only provide the fields you want to update.
+
+        Args:
+            dataset_id: Dataset containing the document.
+            document_id: Document ID to update.
+            name: New name of the document.
+            meta_fields: Metadata fields to update.
+            chunk_method: Parsing chunk method (str or ChunkMethod).
+            parser_config: Parser configuration if chunk_method is changed.
+            enabled: 1 to enable, 0 to disable document.
+
+        Returns:
+            Updated Document instance.
         """
         require_params(dataset_id=dataset_id, document_id=document_id)
+        chunk_method = validate_enum(chunk_method, ChunkMethod, "chunk_method")
 
-        if isinstance(chunk_method, str):
-            try:
-                chunk_method = ChunkMethod(chunk_method)
-            except ValueError:
-                raise RAGFlowValidationError(
-                    f"Invalid chunk_method: {chunk_method}. "
-                    f"Allowed: {[m.value for m in ChunkMethod]}"
-                )
-
-        payload: dict[str, Any] = {
+        payload = {
             "name": name,
             "meta_fields": meta_fields,
-            "chunk_method": chunk_method.value if chunk_method else None,
+            "chunk_method": chunk_method,
             "parser_config": parser_config,
             "enabled": enabled,
         }
-
         payload = self._normalize_request(payload)
+
         if not payload:
             raise RAGFlowValidationError("No fields provided to update.")
 
@@ -89,14 +92,17 @@ class DocumentsAPI(BaseAPI):
 
     async def download_document(self, dataset_id: str, document_id: str) -> bytes:
         """
-        Download a document from a dataset as bytes.
+        Download a document as bytes.
 
         Args:
-            dataset_id: Target dataset ID.
+            dataset_id: Dataset containing the document.
             document_id: Document ID to download.
 
         Returns:
-            bytes: Document content.
+            Document content as bytes.
+
+        Raises:
+            RAGFlowAPIError: If download fails.
         """
         require_params(dataset_id=dataset_id, document_id=document_id)
 
@@ -116,29 +122,47 @@ class DocumentsAPI(BaseAPI):
         return resp.content
 
     async def list_documents(
-            self,
-            dataset_id: str,
-            *,
-            page: int = 1,
-            page_size: int = 30,
-            order_by: str = "create_time",
-            desc: bool = True,
-            keywords: Optional[str] = None,
-            document_id: Optional[str] = None,
-            name: Optional[str] = None,
-            create_time_from: int = 0,
-            create_time_to: int = 0,
-            suffix: Optional[List[str]] = None,
-            run: Optional[List[str]] = None,
-            metadata_condition: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[List[Document], int]:
+        self,
+        dataset_id: str,
+        *,
+        page: int = 1,
+        page_size: int = 30,
+        order_by: OrderBy | str = OrderBy.CREATE_TIME,
+        desc: bool = True,
+        keywords: Optional[str] = None,
+        document_id: Optional[str] = None,
+        name: Optional[str] = None,
+        create_time_from: int = 0,
+        create_time_to: int = 0,
+        suffix: Optional[list[str]] = None,
+        run: Optional[list[str]] = None,
+        metadata_condition: Optional[dict[str, Any]] = None,
+    ) -> tuple[list[Document], int]:
         """
-        List documents in a dataset with filtering.
+        List documents in a dataset with optional filtering.
+
+        Args:
+            dataset_id: Dataset ID.
+            page: Page number.
+            page_size: Items per page.
+            order_by: Field to sort by.
+            desc: Whether to sort descending.
+            keywords: Search keywords.
+            document_id: Filter by specific document ID.
+            name: Filter by document name.
+            create_time_from: Filter documents created after this timestamp.
+            create_time_to: Filter documents created before this timestamp.
+            suffix: Filter by file suffixes.
+            run: Filter by ingestion run IDs.
+            metadata_condition: Filter by metadata conditions.
+
+        Returns:
+            Tuple of (list of Document objects, total count).
         """
         if not dataset_id:
             raise RAGFlowValidationError("dataset_id is required")
 
-        params: Dict[str, Any] = {
+        params = {
             "page": page,
             "page_size": page_size,
             "orderby": order_by,
@@ -152,90 +176,77 @@ class DocumentsAPI(BaseAPI):
             "run": run,
             "metadata_condition": metadata_condition,
         }
-
         params = self._normalize_request(params)
         url = f"/datasets/{dataset_id}/documents"
         resp = await self._client.get(url, params=params)
         resp = self._handle_response(resp)
 
-        raw_docs: List[Dict[str, Any]] = resp.get("data", {}).get("docs", [])
+        raw_docs = resp.get("data", {}).get("docs", [])
         total = resp.get("data", {}).get("total", 0)
 
         documents = [Document.from_raw(d) for d in raw_docs]
         return documents, total
 
-    async def delete_documents(
-            self,
-            dataset_id: str,
-            ids: Optional[List[str] | str] = None,
-    ) -> None:
+    async def delete_documents(self, dataset_id: str, ids: Optional[list[str] | str] = None) -> None:
         """
-        Delete documents by IDs in a dataset. If ids=None, delete all.
+        Delete documents by ID in a dataset.
+
+        Args:
+            dataset_id: Dataset ID.
+            ids: List of document IDs to delete. If None, deletes all documents.
         """
         if not dataset_id:
             raise RAGFlowValidationError("dataset_id is required")
 
-        payload: Dict[str, Any] = {"ids": normalize_ids(ids)}
+        payload = {"ids": normalize_ids(ids)}
         payload = self._normalize_request(payload)
 
         url = f"/datasets/{dataset_id}/documents"
         resp = await self._client.delete(url, json=payload)
         self._handle_response(resp, require_data=False)
 
-    async def parse_documents(
-            self,
-            dataset_id: str,
-            document_ids: List[str],
-    ) -> None:
+    async def parse_documents(self, dataset_id: str, document_ids: list[str]) -> None:
         """
-        Parse specified documents in a dataset.
+        Start parsing specified documents in a dataset.
 
         Args:
-            dataset_id: Target dataset ID.
+            dataset_id: Dataset ID.
             document_ids: List of document IDs to parse.
 
         Raises:
-            RAGFlowValidationError: If dataset_id or document_ids is invalid.
+            RAGFlowValidationError: If dataset_id or document_ids are invalid.
         """
         require_params(dataset_id=dataset_id)
         document_ids = normalize_ids(document_ids)
 
         if not document_ids:
-            raise RAGFlowValidationError("document_ids must be a non-empty list of strings")
+            raise RAGFlowValidationError("document_ids must be a non-empty list")
 
-        payload: Dict[str, Any] = {
-            "document_ids": document_ids
-        }
+        payload = {"document_ids": document_ids}
         payload = self._normalize_request(payload)
 
         url = f"/datasets/{dataset_id}/chunks"
         resp = await self._client.post(url, json=payload)
         self._handle_response(resp, require_data=False)
 
-    async def stop_parsing_documents(
-            self,
-            dataset_id: str,
-            document_ids: List[str],
-    ) -> None:
+    async def stop_parsing_documents(self, dataset_id: str, document_ids: list[str]) -> None:
         """
         Stop parsing specified documents in a dataset.
 
         Args:
-            dataset_id: Target dataset ID.
+            dataset_id: Dataset ID.
             document_ids: List of document IDs to stop parsing.
 
         Raises:
-            RAGFlowValidationError: If dataset_id or document_ids is invalid.
+            RAGFlowValidationError: If dataset_id or document_ids are invalid.
         """
         require_params(dataset_id=dataset_id)
         document_ids = normalize_ids(document_ids)
 
         if not document_ids:
-            raise RAGFlowValidationError("document_ids must be a non-empty list of strings")
+            raise RAGFlowValidationError("document_ids must be a non-empty list")
 
-        payload: Dict[str, Any] = {
-            "document_ids": document_ids,
-        }
+        payload = {"document_ids": document_ids}
         payload = self._normalize_request(payload)
 
         url = f"/datasets/{dataset_id}/chunks"

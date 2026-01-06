@@ -1,17 +1,19 @@
-from .agents import AgentsAPI
-from .chats import ChatsAPI
-from .chunks import ChunksAPI
-from .datasets import DatasetAPI
-from .documents import DocumentsAPI
-from .sessions import SessionAPI
+from .agent import AgentAPI
+from .chat import ChatAPI
+from .chunk import ChunkAPI
+from .dataset import DatasetAPI
+from .document import DocumentAPI
+from .session import SessionAPI
 from .system import SystemAPI
+from .file import FileAPI
 
 __all__ = [
-    "AgentsAPI",
-    "ChatsAPI",
-    "ChunksAPI",
+    "AgentAPI",
+    "ChatAPI",
+    "ChunkAPI",
     "DatasetAPI",
-    "DocumentsAPI",
+    "DocumentAPI",
     "SessionAPI",
     "SystemAPI",
+    "FileAPI",
 ]

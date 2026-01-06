@@ -5,6 +5,7 @@ from .dataset import Dataset
 from .document import Document
 from .system import SystemHealth
 from .task import TaskStatus
+from .file import File, Folder
 
 __all__ = [
     "Agent",
@@ -16,4 +17,6 @@ __all__ = [
     "Document",
     "SystemHealth",
     "TaskStatus",
+    "File",
+    "Folder",
 ]

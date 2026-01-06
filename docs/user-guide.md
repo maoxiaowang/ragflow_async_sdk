@@ -29,23 +29,15 @@ client = AsyncRAGFlowClient(
 )
 ```
 
-The client internally manages: - authentication headers -
-request/response validation - exception translation - streaming support
+The client internally manages: 
+- authentication headers 
+- request/response validation 
+- exception translation 
+- streaming support
 
 ------------------------------------------------------------------------
 
 ## Dataset APIs
-
-### List Datasets
-
-``` python
-datasets, total = await client.datasets.list_datasets(page=1, page_size=10)
-
-for ds in datasets:
-    print(ds.id, ds.name, ds.permission)
-
-print("Total:", total)
-```
 
 ------------------------------------------------------------------------
 
@@ -60,6 +52,17 @@ dataset = await client.datasets.create_dataset(
     chunk_method=ChunkMethod.NAIVE,
     permission=Permission.ME,
 )
+```
+
+### List Datasets
+
+``` python
+datasets, total = await client.datasets.list_datasets(page=1, page_size=10)
+
+for ds in datasets:
+    print(ds.id, ds.name, ds.permission)
+
+print("Total:", total)
 ```
 
 ------------------------------------------------------------------------
@@ -271,6 +274,36 @@ async for chunk in await client.chats.ask(
 Notes: - The returned object is an `AsyncGenerator` - Each yielded item
 is a `ChatCompletionResult` or `AgentCompletionResult` - Stream ends
 automatically when server sends `data: true` or `[DONE]`
+
+
+### Generate Related questions
+Generates five to ten alternative question strings from the user's original query to retrieve more relevant search results.
+
+Example:
+```python
+result = await client.sessions.generate_related_questions(
+    agent.id,
+    question="What are the key advantages of Neovim over Vim?",
+    industry="software_development"
+)
+print(result)
+```
+Output:
+```text
+[
+    'Benefits of Neovim over Vim', 
+    'Neovim vs. Vim comparison', 
+    'Performance differences between Neovim and Vim', 
+    'Features of Neovim that improve upon Vim', 
+    'Why choose Neovim over Vim', 
+    'Neovim enhancements over traditional Vim', 
+    'User experience in Neovim vs. Vim', 
+    'Modern improvements in Neovim', 
+    'Extensibility of Neovim compared to Vim'
+]
+```
+
+> NOTE The chat model autonomously determines the number of questions to generate based on the instruction, typically between five and ten.
 
 ------------------------------------------------------------------------
 

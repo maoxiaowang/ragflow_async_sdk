@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Any, List, Dict, Self
+from typing import Optional, Any, Self
 
 from .base import BaseEntity
 from .dataset import Dataset
@@ -31,7 +31,7 @@ class PromptConfig(BaseEntity):
     similarity_threshold: Optional[float] = 0.2
     keywords_similarity_weight: Optional[float] = 0.7
     top_n: Optional[int] = 6
-    variables: Optional[List[Dict[str, Any]]] = None
+    variables: Optional[list[dict[str, Any]]] = None
     rerank_model: Optional[str] = None
     empty_response: Optional[str] = None
     opener: Optional[str] = None
@@ -42,10 +42,6 @@ class PromptConfig(BaseEntity):
         "similarity_threshold",
         "keywords_similarity_weight",
         "top_n",
-        "variables",
-        "rerank_model",
-        "empty_response",
-        "opener",
         "show_quote",
         "prompt",
     )
@@ -56,7 +52,7 @@ class ChatAssistant(BaseEntity):
     id: str
     name: str
     avatar: Optional[str] = None
-    datasets: Optional[List[str]] = None
+    datasets: Optional[list[str]] = None
     llm: Optional[LLMConfig] = None
     prompt: Optional[PromptConfig] = None
     create_date: Optional[str] = None
@@ -71,9 +67,7 @@ class ChatAssistant(BaseEntity):
         "id",
         "name",
         "avatar",
-        "dataset_ids",
-        "llm",
-        "prompt",
+        "datasets",
         "create_date",
         "create_time",
         "update_date",
@@ -118,11 +112,17 @@ class ChatCompletionResult(BaseEntity):
     """
     answer: Optional[str] = None
     session_id: Optional[str] = None
-    messages: Optional[List[ChatCompletionMessage]] = None
-    reference: Optional[List[ChatCompletionReference]] = None
+    messages: Optional[list[ChatCompletionMessage]] = None
+    reference: Optional[list[ChatCompletionReference]] = None
+
+    __export_fields__ = (
+        "answer",
+        "session_id",
+        "messages",
+    )
 
     @classmethod
-    def from_raw(cls, raw: Dict[str, Any]) -> Self:
+    def from_raw(cls, raw: dict[str, Any]) -> Self:
         obj = cls(
             answer=raw.get("answer"),
             session_id=raw.get("session_id"),

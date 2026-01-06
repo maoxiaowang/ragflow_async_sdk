@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List, Tuple, Dict, Callable, Awaitable, TypeVar
+from typing import Optional, Callable, Awaitable, TypeVar
 
 import httpx
 
@@ -110,13 +110,13 @@ class AsyncHTTPClient:
         *,
         params: Optional[dict] = None,
         json: Optional[dict] = None,
-        files: Optional[List[Tuple[str, Tuple[str, bytes, Optional[str]]]]] = None,
+        files: Optional[list[tuple[str, tuple[str, bytes, Optional[str]]]]] = None,
         expect_json: bool = True,
         timeout: Optional[float] = None,
         with_auth: bool = True,
         headers: Optional[dict] = None,
         **kwargs,
-) -> Dict | httpx.Response:
+) -> dict | httpx.Response:
         url = self._build_url(path)
         final_headers = self._build_headers(
             headers=headers,
