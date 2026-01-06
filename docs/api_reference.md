@@ -89,17 +89,6 @@ return values, and code examples.
 - [System API](#system-apis)
   - [Health Check](#1-health-check)
 
-
-- Models & Entities
-  - Dataset
-  - Document
-  - Chunk
-  - File & Folder
-  - ChatCompletionResult
-  - AgentCompletionResult
-  - Session Models
-
-
 ## Getting Started
 This section provides a quick introduction for beginners on how to initialize the client, 
 run asynchronous operations, handle exceptions, and use SDK entities.
