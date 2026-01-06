@@ -2,6 +2,7 @@ from typing import Any, Optional, Union
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError
+from ..exceptions.api import RAGFlowConflictError
 from ..models.chunk import Chunk
 from ..utils.normalizers import normalize_ids
 from ..utils.validators import require_params
@@ -89,6 +90,50 @@ class ChunkAPI(BaseAPI):
 
         chunks = [Chunk.from_raw(item) for item in raw_chunks]
         return chunks, total
+
+    async def get_chunk(
+            self,
+            dataset_id: str,
+            document_id: str,
+            *,
+            chunk_id: str,
+    ) -> Optional[Chunk]:
+        """
+        Get a single chunk by ID within a document.
+
+        Args:
+            dataset_id: Dataset ID.
+            document_id: Document ID.
+            chunk_id: Chunk ID.
+
+        Returns:
+            Chunk instance if found, otherwise None.
+
+        Raises:
+            RAGFlowValidationError: If required parameters are missing.
+            RAGFlowConflictError: If multiple chunks match.
+        """
+        require_params(
+            dataset_id=dataset_id,
+            document_id=document_id,
+            chunk_id=chunk_id,
+        )
+
+        chunks, _ = await self.list_chunks(
+            dataset_id=dataset_id,
+            document_id=document_id,
+            page=1,
+            page_size=2,
+            chunk_id=chunk_id,
+        )
+
+        if not chunks:
+            return None
+
+        if len(chunks) > 1:
+            raise RAGFlowConflictError(f"Multiple chunks found for id={chunk_id}")
+
+        return chunks[0]
 
     async def update_chunk(
         self,

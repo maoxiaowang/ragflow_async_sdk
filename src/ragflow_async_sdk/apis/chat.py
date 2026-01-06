@@ -2,6 +2,8 @@ from typing import Optional, Any, AsyncGenerator
 
 from .base import BaseAPI
 from .mixins import SessionMixin
+from ..exceptions import RAGFlowValidationError
+from ..exceptions.api import RAGFlowConflictError
 from ..models.chat import ChatAssistant, ChatCompletionResult
 from ..models.session import ChatSession
 from ..types import OrderBy
@@ -141,6 +143,50 @@ class ChatAPI(SessionMixin[ChatSession], BaseAPI):
         chats = [ChatAssistant.from_raw(item) for item in data]
         return chats, len(chats)
 
+    async def get_chat(
+            self,
+            *,
+            chat_id: Optional[str] = None,
+            name: Optional[str] = None,
+    ) -> Optional[ChatAssistant]:
+        """
+        Get a single chat assistant by ID or name.
+
+        Exactly one of chat_id or name must be provided.
+
+        Args:
+            chat_id: Chat assistant ID.
+            name: Chat assistant name.
+
+        Returns:
+            ChatAssistant instance if found, otherwise None.
+
+        Raises:
+            RAGFlowValidationError: If parameters are invalid.
+            RAGFlowConflictError: If multiple chats match.
+        """
+        if not chat_id and not name:
+            raise RAGFlowValidationError("Either chat_id or name must be provided")
+
+        if chat_id and name:
+            raise RAGFlowValidationError("Only one of chat_id or name can be provided")
+
+        chats, _ = await self.list_chats(
+            page=1,
+            page_size=2,
+            chat_id=chat_id,
+            name=name,
+        )
+
+        if not chats:
+            return None
+
+        if len(chats) > 1:
+            key = f"id={chat_id}" if chat_id else f"name={name}"
+            raise RAGFlowConflictError(f"Multiple chats found for {key}")
+
+        return chats[0]
+
     async def create_session(
         self,
         chat_id: str,
@@ -198,6 +244,19 @@ class ChatAPI(SessionMixin[ChatSession], BaseAPI):
             name=name,
             session_id=session_id,
             user_id=user_id,
+        )
+
+    async def get_chat_session(
+            self,
+            chat_id: str,
+            *,
+            session_id: Optional[str] = None,
+            name: Optional[str] = None,
+    ) -> Optional[ChatSession]:
+        return await self.get_session(
+            parent_id=chat_id,
+            session_id=session_id,
+            name=name,
         )
 
     async def update_session(

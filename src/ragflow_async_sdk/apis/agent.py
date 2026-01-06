@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import Optional, Any, AsyncGenerator
 
 from .mixins import SessionMixin
 from ..apis.base import BaseAPI
 from ..exceptions import RAGFlowValidationError
-from ..exceptions.api import RAGFlowConflictError, RAGFlowAPIError, RAGFlowServerError
-from ..models.agent import Agent
+from ..exceptions.api import RAGFlowConflictError, RAGFlowAPIError, RAGFlowResponseError
+from ..models.agent import Agent, AgentCompletionResult
 from ..models.session import AgentSession
 from ..types import OrderBy
 from ..utils.validators import require_params
@@ -117,7 +117,7 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
 
         Raises:
             RAGFlowAPIError: If creation fails.
-            RAGFlowServerError: If agent cannot be retrieved after creation.
+            RAGFlowResponseError: If agent cannot be retrieved after creation.
         """
         require_params(title=title, dsl=dsl)
 
@@ -136,13 +136,46 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
 
         agent = await self.get_agent(title=title)
         if agent is None:
-            raise RAGFlowServerError("Agent created but cannot be retrieved")
+            raise RAGFlowResponseError("Agent created but cannot be retrieved")
 
         return agent
 
-    async def update_agent(self, *args, **kwargs):
-        """Agent sessions do not support update via API."""
-        raise NotImplementedError("Agent session does not support update via API")
+    async def update_agent(
+            self,
+            agent_id: str,
+            *,
+            title: Optional[str] = None,
+            description: Optional[str] = None,
+            dsl: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """
+        Update an existing agent.
+
+        Args:
+            agent_id: Agent ID (required).
+            title: Optional new title for the agent.
+            description: Optional new description.
+            dsl: Optional updated canvas DSL object.
+
+        Raises:
+            ValueError: If no fields are provided for update.
+        """
+        require_params(agent_id=agent_id)
+
+        payload = {
+            "title": title,
+            "description": description,
+            "dsl": dsl,
+        }
+
+        payload = self._normalize_request(payload)
+
+        if not payload:
+            raise RAGFlowValidationError("No fields provided to update.")
+
+        url = f"/agents/{agent_id}"
+        resp = await self._client.put(url, json=payload)
+        self._handle_response(resp, require_data=False)
 
     async def delete_agent(self, agent_id: str) -> bool:
         """
@@ -218,6 +251,19 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
             user_id=user_id,
         )
 
+    async def get_agent_session(
+            self,
+            agent_id: str,
+            *,
+            session_id: Optional[str] = None,
+            name: Optional[str] = None,
+    ) -> Optional[AgentSession]:
+        return await self.get_session(
+            parent_id=agent_id,
+            session_id=session_id,
+            name=name,
+        )
+
     async def update_session(
         self,
         agent_id: str,
@@ -250,3 +296,50 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
             session_ids: Single or list of session IDs. If None, delete all sessions.
         """
         await super().delete_sessions(parent_id=agent_id, session_ids=session_ids)
+
+    async def ask(
+            self,
+            agent_id: str,
+            session_id: str,
+            prompt: str,
+            *,
+            stream: bool = False,
+            **kwargs,
+    ) -> AgentCompletionResult | AsyncGenerator[AgentCompletionResult, None]:
+        """
+        Ask a question in an agent session.
+
+        Args:
+            agent_id: Agent ID.
+            session_id: Session ID.
+            prompt: User question.
+            stream: Whether to return streaming results (default False).
+            **kwargs: Additional parameters such as temperature, top_p, etc.
+
+        Returns:
+            - If `stream=False`: a single `AgentCompletionResult`.
+            - If `stream=True`: an async generator yielding `AgentCompletionResult` items.
+
+        Raises:
+            RAGFlowValidationError: If required parameters are missing.
+            RAGFlowAPIError: If API request fails.
+
+        Example:
+        ```python
+        # Non-streaming
+        result = await client.agents.ask(agent_id="agent_123", session_id="sess_456", prompt="Hello AI")
+        print(result.text)
+
+        # Streaming
+        async for chunk in client.agents.ask(agent_id="agent_123", session_id="sess_456", prompt="Hello AI", stream=True):
+            print(chunk.text)
+        ```
+        """
+        return await super().ask(
+            parent_id=agent_id,
+            session_id=session_id,
+            prompt=prompt,
+            session_type="agents",
+            stream=stream,
+            **kwargs,
+        )

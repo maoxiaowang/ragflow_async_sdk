@@ -1,5 +1,7 @@
 # RAGFlow Async SDK
 
+## Overview
+
 An **async-first Python SDK** for interacting with the RAGFlow API.
 
 Provides clean, typed, and production-ready access to RAGFlow features such as:
@@ -13,7 +15,8 @@ Provides clean, typed, and production-ready access to RAGFlow features such as:
 
 ---
 
-## Installation
+## Quick Start
+### Installation
 Requires **Python 3.10+**.
 
 ```bash
@@ -26,9 +29,7 @@ For async file uploads with `file_from_path`, also install:
 pip install aiofiles
 ```
 
----
-
-## Quick Start
+### Initialization
 
 ```python
 from ragflow_async_sdk import AsyncRAGFlowClient
@@ -39,108 +40,50 @@ client = AsyncRAGFlowClient(
 )
 ```
 
----
+### Run with asyncio
 
-## Examples
+All operations in the RAGFlow SDK are asynchronous. To execute any API call, you need to run it inside Python's `asyncio` event loop.
 
-### Chat
-
-- **Non-streaming**
 
 ```python
-chat = await client.chats.create(name="demo-chat")
-session = await client.chats.create_session(chat.id)
+async def main():
+    # Example: Health check
+    system_health = await client.systems.healthz()
+    print(system_health.status, system_health.details)
 
-result = await client.chats.ask(chat.id, session.id, "Hello")
-print(result.answer)
+# Run the async main function
+asyncio.run(main())
 ```
 
-- **Streaming (SSE)**
-
-```python
-async for chunk in await client.chats.ask(chat.id, session.id, "Hello", stream=True):
-    print(chunk.answer, end="", flush=True)
-```
-
-### Dataset
-
-- **Create**
-```python
-dataset = await client.datasets.create_dataset(name="my_dataset")
-print(dataset.id, dataset.to_dict())
-```
-
-- **List**
-```python
-datasets, total = await client.datasets.list_datasets()
-dataset_ids = [item.id for item in datasets]
-```
-
-### Document
-
-- **Upload**
-```python
-from ragflow_async_sdk.utils.files import file_from_path
-
-file_paths = ["test.txt", "test.pdf"]
-files_to_send = [await file_from_path(p) for p in file_paths]
-
-uploaded_docs, total = await client.documents.upload_documents(dataset.id, files=files_to_send)
-```
-
-- **Download**
-```python
-import aiofiles, os
-
-file_path = "./downloads/test.pdf"
-os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-content = await client.files.download_file(dataset.id, document.id)
-
-async with aiofiles.open(file_path, "wb") as f:
-    await f.write(content)
-```
+> Notes:
+> - All API calls are async; use `await` to get results.
+> - Streaming APIs return async generators; iterate with `async for`.
 
 ---
 
-## Error Handling
+## 📚 Documentation
 
-```python
-from ragflow_async_sdk.exceptions import (
-    RAGFlowAPIError,
-    RAGFlowValidationError,
-    RAGFlowTimeoutError,
-)
-
-try:
-    await client.datasets.list_datasets()
-except RAGFlowValidationError as e:
-    print("Validation error:", e.message)
-except RAGFlowAPIError as e:
-    print("API error:", e.message)
-except RAGFlowTimeoutError:
-    print("Request timed out")
-```
-
----
-
-## Design Principles
-
-- Async-first (`async` / `await` everywhere)
-- No httpx leakage in public APIs
-- Streaming support via async generators
-- Clear separation of models / APIs / types
-- Typed return values
-
----
-
-## Documentation
-
-📘 **Full documentation:**  
 See the complete usage guide here:  
 
-👉 **[User Guide](docs/user-guide.md)**
+👉 **[User Guide](docs/user_guide.md)**
 
+### 🧩 Main Modules
+- [Datasets](docs/api_reference.md#dataset-apis)
+- [Documents](docs/api_reference.md#document-apis)
+- [Chunks](docs/api_reference.md#chunk-apis)
+- [Chat Assistants](docs/api_reference.md#chat-apis)
+- [Agents](docs/api_reference.md#agent-apis)
+- [Files](docs/api_reference.md#file-apis)
+- [System](docs/api_reference.md#system-apis)
+
+### 📖 Full API Reference
+[API Reference](docs/api_reference.md)
+
+### 💡 Error Reference
+- [Error Reference](docs/error_reference.md#error-reference)
+
+### 🧬 Entities Reference
+- [Entities Reference](docs/entities_reference.md#entities-reference)
 ---
 
 ## License

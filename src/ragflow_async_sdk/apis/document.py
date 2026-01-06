@@ -3,6 +3,7 @@ from typing import Optional, Any
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
+from ..exceptions.api import RAGFlowConflictError
 from ..models.document import Document
 from ..types import OrderBy, ChunkMethod
 from ..utils.validators import require_params, validate_enum
@@ -186,6 +187,55 @@ class DocumentAPI(BaseAPI):
 
         documents = [Document.from_raw(d) for d in raw_docs]
         return documents, total
+
+    async def get_document(
+            self,
+            dataset_id: str,
+            *,
+            document_id: Optional[str] = None,
+            name: Optional[str] = None,
+    ) -> Optional[Document]:
+        """
+        Get a single document by ID or name within a dataset.
+
+        Exactly one of document_id or name must be provided.
+
+        Args:
+            dataset_id: Dataset ID.
+            document_id: Document ID.
+            name: Document name.
+
+        Returns:
+            Document instance if found, otherwise None.
+
+        Raises:
+            RAGFlowValidationError: If parameters are invalid.
+            RAGFlowConflictError: If multiple documents match.
+        """
+        require_params(dataset_id=dataset_id)
+
+        if not document_id and not name:
+            raise RAGFlowValidationError("Either document_id or name must be provided")
+
+        if document_id and name:
+            raise RAGFlowValidationError("Only one of document_id or name can be provided")
+
+        documents, _ = await self.list_documents(
+            dataset_id=dataset_id,
+            page=1,
+            page_size=2,
+            document_id=document_id,
+            name=name,
+        )
+
+        if not documents:
+            return None
+
+        if len(documents) > 1:
+            key = f"id={document_id}" if document_id else f"name={name}"
+            raise RAGFlowConflictError(f"Multiple documents found for {key}")
+
+        return documents[0]
 
     async def delete_documents(self, dataset_id: str, ids: Optional[list[str] | str] = None) -> None:
         """

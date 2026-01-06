@@ -6,6 +6,7 @@ from typing import (
 )
 
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
+from ..exceptions.api import RAGFlowConflictError
 from ..http import AsyncHTTPClient
 from ..models import AgentCompletionResult, ChatCompletionResult
 from ..models.session import BaseSession
@@ -95,6 +96,39 @@ class SessionMixin(Generic[T]):
         data = resp.get("data", [])
         sessions = [self._session_model.from_raw(item) for item in data]
         return sessions, len(sessions)
+
+    async def get_session(
+        self,
+        parent_id: str,
+        *,
+        session_id: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> Optional[T]:
+        """
+        Get a single session by session_id or name.
+        Exactly one of session_id or name must be provided.
+        """
+        if not session_id and not name:
+            raise RAGFlowValidationError("Either session_id or name must be provided")
+        if session_id and name:
+            raise RAGFlowValidationError("Only one of session_id or name can be provided")
+
+        sessions, _ = await self.list_sessions(
+            parent_id=parent_id,
+            page=1,
+            page_size=2,
+            session_id=session_id,
+            name=name,
+        )
+
+        if not sessions:
+            return None
+
+        if len(sessions) > 1:
+            key = f"session_id={session_id}" if session_id else f"name={name}"
+            raise RAGFlowConflictError(f"Multiple sessions found for {key}")
+
+        return sessions[0]
 
     async def update_session(
         self,

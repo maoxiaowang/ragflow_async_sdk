@@ -42,14 +42,6 @@ class RAGFlowRateLimitError(RAGFlowAPIError):
     default_status_code = 429
 
 
-class RAGFlowServerError(RAGFlowAPIError):
-    """5xx"""
-    default_status_code = 500
-
-
-# -------------------------
-# Response parsing
-# -------------------------
-
-class RAGFlowResponseError(RAGFlowError):
+class RAGFlowResponseError(RAGFlowAPIError):
     """Invalid or unexpected API response."""
+    default_status_code = 500
