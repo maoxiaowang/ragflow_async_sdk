@@ -13,7 +13,7 @@ Requires **Python 3.10+**.
 pip install ragflow-async-sdk
 ```
 
-Optional (for async file uploads):
+Optional (for async local file uploads):
 
 ```bash
 pip install aiofiles
@@ -41,8 +41,6 @@ async def main():
 
 asyncio.run(main())
 ```
-
-> All SDK operations are async; use `await` for results and async iteration for streaming.
 
 ---
 

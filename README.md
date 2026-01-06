@@ -23,12 +23,6 @@ Requires **Python 3.10+**.
 pip install ragflow-async-sdk
 ```
 
-For async file uploads with `file_from_path`, also install:
-
-```bash
-pip install aiofiles
-```
-
 ### Initialization
 
 ```python
