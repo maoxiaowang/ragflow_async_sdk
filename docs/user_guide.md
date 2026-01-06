@@ -26,7 +26,7 @@ from ragflow_async_sdk import AsyncRAGFlowClient
 
 client = AsyncRAGFlowClient(
     api_key="YOUR_API_KEY",
-    base_url="http://your-ragflow-address"
+    server_url="http://your-ragflow-address"
 )
 ```
 
