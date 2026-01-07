@@ -62,13 +62,13 @@ See the quick usage guide here:
 👉 **[User Guide](docs/user_guide.md)**
 
 ### 🧩 Main Modules
-- [Datasets](docs/api_reference.md#dataset-apis)
-- [Documents](docs/api_reference.md#document-apis)
-- [Chunks](docs/api_reference.md#chunk-apis)
-- [Chat Assistants](docs/api_reference.md#chat-apis)
-- [Agents](docs/api_reference.md#agent-apis)
-- [Files](docs/api_reference.md#file-apis)
-- [System](docs/api_reference.md#system-apis)
+- [Datasets](docs/api_reference.md#-dataset-apis)
+- [Documents](docs/api_reference.md#-document-apis)
+- [Chunks](docs/api_reference.md#-chunk-apis)
+- [Chat Assistants](docs/api_reference.md#-chat-apis)
+- [Agents](docs/api_reference.md#-agent-apis)
+- [Files](docs/api_reference.md#-file-apis)
+- [System](docs/api_reference.md#-system-apis)
 
 ### 📖 Full API Reference
 - [API Reference](docs/api_reference.md)
