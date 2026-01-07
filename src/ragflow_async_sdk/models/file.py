@@ -48,3 +48,11 @@ class ListFilesResult(BaseEntity):
         obj = cls(files=files, parent_folder=parent_folder,)
         obj._raw = raw
         return obj
+
+
+@dataclass
+class ConversionResult:
+    file_id: str
+    kb_id: str
+    status: str
+    message: str | None = None

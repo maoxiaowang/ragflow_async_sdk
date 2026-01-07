@@ -4,8 +4,9 @@ from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError
 from ..exceptions.api import RAGFlowConflictError
 from ..models.chunk import Chunk
+from ..utils.entity_helpers import get_single_or_raise
 from ..utils.normalizers import normalize_ids
-from ..utils.validators import require_params
+from ..utils.validators import require_params, resolve_unique_field
 
 
 class ChunkAPI(BaseAPI):
@@ -127,13 +128,12 @@ class ChunkAPI(BaseAPI):
             chunk_id=chunk_id,
         )
 
-        if not chunks:
-            return None
-
-        if len(chunks) > 1:
-            raise RAGFlowConflictError(f"Multiple chunks found for id={chunk_id}")
-
-        return chunks[0]
+        return get_single_or_raise(
+            items=chunks,
+            key_name="chunk_id",
+            key_value=chunk_id,
+            entity_name="Chunk"
+        )
 
     async def update_chunk(
         self,

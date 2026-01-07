@@ -226,6 +226,7 @@ The RAGFlow SDK is designed with the following principles:
 - **Typed and predictable:** Return values are typed, ensuring IDE support and fewer runtime errors.
 - **No httpx leakage:** Internal HTTP client is encapsulated.
 - **Extensible:** Easily extendable for new APIs, entities, or utilities.
+- **Error-first philosophy:** If it runs without errors, it’s working as intended.
 
 ---
 

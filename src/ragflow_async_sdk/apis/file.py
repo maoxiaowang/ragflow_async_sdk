@@ -2,8 +2,9 @@ from typing import Any, Optional
 
 from ..apis.base import BaseAPI
 from ..exceptions import RAGFlowValidationError
-from ..models.file import Folder, File, ListFilesResult
+from ..models.file import Folder, File, ListFilesResult, ConversionResult
 from ..types import OrderBy
+from ..types.file import FileType
 from ..utils.validators import require_params, validate_file_tuples
 
 
@@ -41,7 +42,7 @@ class FileAPI(BaseAPI):
     async def create_file_or_folder(
         self,
         name: str,
-        type_: str,
+        type_: FileType | str,
         parent_id: str | None = None
     ) -> Folder | File:
         """
@@ -64,6 +65,7 @@ class FileAPI(BaseAPI):
         payload = {"name": name, "type": type_}
         if parent_id:
             payload["parent_id"] = parent_id
+        payload = self._normalize_request(payload)
 
         resp = await self._client.post("/file/create", json=payload)
         data = self._handle_response(resp)["data"]
@@ -236,7 +238,7 @@ class FileAPI(BaseAPI):
         resp = self._handle_response(resp)
         return bool(resp.get("data", False))
 
-    async def convert_files(self, file_ids: list[str], kb_ids: list[str]) -> list[dict[str, Any]]:
+    async def convert_files(self, file_ids: list[str], kb_ids: list[str]) -> list[ConversionResult]:
         """
         Convert files into knowledge base entries.
 
@@ -259,7 +261,8 @@ class FileAPI(BaseAPI):
                 "kb_ids": kb_ids
             }
         )
-        return self._handle_response(resp)["data"]
+        data = self._handle_response(resp)["data"]
+        return [ConversionResult(**item) for item in data]
 
     async def download_file(self, file_id: str) -> bytes:
         """

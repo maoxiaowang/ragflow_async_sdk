@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, Any
 
 from ..exceptions import RAGFlowValidationError
 
@@ -70,24 +70,59 @@ def validate_file_tuples(
         param_name: Name of the parameter for error messages.
 
     Raises:
-        TypeError: If the structure is invalid.
-        ValueError: If any tuple does not have exactly 3 elements.
+        RAGFlowValidationError: If structure is invalid.
     """
     if not isinstance(files, list):
-        raise TypeError(f"{param_name} must be a list, got {type(files).__name__}")
+        raise RAGFlowValidationError(f"{param_name} must be a list, got {type(files).__name__}")
 
     for i, f in enumerate(files):
         if not isinstance(f, tuple):
-            raise TypeError(f"{param_name}[{i}] must be a tuple, got {type(f).__name__}")
+            raise RAGFlowValidationError(f"{param_name}[{i}] must be a tuple, got {type(f).__name__}")
         if len(f) != 3:
-            raise ValueError(
+            raise RAGFlowValidationError(
                 f"{param_name}[{i}] must have exactly 3 elements "
                 f"(filename, bytes, content_type), got {len(f)}"
             )
         filename, content, content_type = f
         if not isinstance(filename, str):
-            raise TypeError(f"{param_name}[{i}][0] must be str, got {type(filename).__name__}")
+            raise RAGFlowValidationError(
+                f"{param_name}[{i}][0] must be str, got {type(filename).__name__}"
+            )
         if not isinstance(content, (bytes, bytearray)):
-            raise TypeError(f"{param_name}[{i}][1] must be bytes or bytearray, got {type(content).__name__}")
+            raise RAGFlowValidationError(
+                f"{param_name}[{i}][1] must be bytes or bytearray, got {type(content).__name__}"
+            )
         if not isinstance(content_type, str):
-            raise TypeError(f"{param_name}[{i}][2] must be str, got {type(content_type).__name__}")
+            raise RAGFlowValidationError(
+                f"{param_name}[{i}][2] must be str, got {type(content_type).__name__}"
+            )
+
+
+def resolve_unique_field(**kwargs) -> tuple[str, Any]:
+    """
+    Validate mutually exclusive unique parameters and return the parameter name and its value.
+
+    Args:
+        kwargs: Field_name=value pairs, e.g.,
+            dataset_id="123", name="my_dataset"
+
+    Returns:
+        tuple[param_name, value], e.g. ("dataset_id", "123") or ("name", "my_dataset")
+
+    Raises:
+        RAGFlowValidationError: If none or more than one parameter has a value.
+    """
+    non_empty = [(k, v) for k, v in kwargs.items() if v not in (None, "")]
+
+    if not non_empty:
+        raise RAGFlowValidationError(
+            "At least one of the following parameters must be provided: "
+            + ", ".join(kwargs.keys())
+        )
+    if len(non_empty) > 1:
+        raise RAGFlowValidationError(
+            "Only one of the following parameters can be provided: "
+            + ", ".join(kwargs.keys())
+        )
+
+    return non_empty[0]

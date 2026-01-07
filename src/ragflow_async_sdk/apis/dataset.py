@@ -2,12 +2,13 @@ from typing import Optional, Any
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
-from ..exceptions.api import RAGFlowConflictError
+from ..exceptions.api import RAGFlowConflictError, RAGFlowNotFoundError
 from ..models.dataset import Dataset, KnowledgeGraph
 from ..models.task import TaskStatus
 from ..types import OrderBy, ChunkMethod, Permission
+from ..utils.entity_helpers import get_single_or_raise
 from ..utils.normalizers import normalize_ids
-from ..utils.validators import require_params, validate_enum
+from ..utils.validators import require_params, validate_enum, resolve_unique_field
 
 
 class DatasetAPI(BaseAPI):
@@ -163,7 +164,7 @@ class DatasetAPI(BaseAPI):
             *,
             dataset_id: Optional[str] = None,
             name: Optional[str] = None,
-    ) -> Optional[Dataset]:
+    ) -> Dataset:
         """
         Get a single dataset by ID or name.
 
@@ -180,11 +181,7 @@ class DatasetAPI(BaseAPI):
             RAGFlowValidationError: If both or neither parameters are provided.
             RAGFlowConflictError: If multiple datasets match the query.
         """
-        if not dataset_id and not name:
-            raise RAGFlowValidationError("Either dataset_id or name must be provided")
-
-        if dataset_id and name:
-            raise RAGFlowValidationError("Only one of dataset_id or name can be provided")
+        param_name, param_value = resolve_unique_field(dataset_id=dataset_id, name=name)
 
         datasets, _ = await self.list_datasets(
             page=1,
@@ -193,14 +190,12 @@ class DatasetAPI(BaseAPI):
             name=name,
         )
 
-        if not datasets:
-            return None
-
-        if len(datasets) > 1:
-            key = f"id={dataset_id}" if dataset_id else f"name={name}"
-            raise RAGFlowConflictError(f"Multiple datasets found for {key}")
-
-        return datasets[0]
+        return get_single_or_raise(
+            items=datasets,
+            key_name=param_name,
+            key_value=param_value,
+            entity_name="Dataset",
+        )
 
     async def update_dataset(
             self,

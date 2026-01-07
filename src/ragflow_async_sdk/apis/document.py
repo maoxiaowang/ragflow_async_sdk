@@ -3,10 +3,11 @@ from typing import Optional, Any
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
-from ..exceptions.api import RAGFlowConflictError
+from ..exceptions.api import RAGFlowConflictError, RAGFlowNotFoundError
 from ..models.document import Document
 from ..types import OrderBy, ChunkMethod
-from ..utils.validators import require_params, validate_enum
+from ..utils.entity_helpers import get_single_or_raise
+from ..utils.validators import require_params, validate_enum, resolve_unique_field
 from ..utils.normalizers import normalize_ids
 
 
@@ -17,7 +18,7 @@ class DocumentAPI(BaseAPI):
         self,
         dataset_id: str,
         files: list[tuple[str, bytes, str]],
-    ) -> tuple[list[dict[str, Any]], int]:
+    ) -> list[Document]:
         """
         Upload multiple documents to a dataset.
 
@@ -39,8 +40,7 @@ class DocumentAPI(BaseAPI):
             files=files_to_send,
         )
 
-        docs = resp.get("data", [])
-        return docs, len(docs)
+        return [Document.from_raw(item) for item in self._handle_response(resp)["data"]]
 
     async def update_document(
         self,
@@ -194,7 +194,7 @@ class DocumentAPI(BaseAPI):
             *,
             document_id: Optional[str] = None,
             name: Optional[str] = None,
-    ) -> Optional[Document]:
+    ) -> Document:
         """
         Get a single document by ID or name within a dataset.
 
@@ -214,11 +214,7 @@ class DocumentAPI(BaseAPI):
         """
         require_params(dataset_id=dataset_id)
 
-        if not document_id and not name:
-            raise RAGFlowValidationError("Either document_id or name must be provided")
-
-        if document_id and name:
-            raise RAGFlowValidationError("Only one of document_id or name can be provided")
+        param_name, param_value = resolve_unique_field(document_id=document_id, name=name)
 
         documents, _ = await self.list_documents(
             dataset_id=dataset_id,
@@ -228,14 +224,12 @@ class DocumentAPI(BaseAPI):
             name=name,
         )
 
-        if not documents:
-            return None
-
-        if len(documents) > 1:
-            key = f"id={document_id}" if document_id else f"name={name}"
-            raise RAGFlowConflictError(f"Multiple documents found for {key}")
-
-        return documents[0]
+        return get_single_or_raise(
+            items=documents,
+            key_name=param_name,
+            key_value=param_value,
+            entity_name="Document",
+        )
 
     async def delete_documents(self, dataset_id: str, ids: Optional[list[str] | str] = None) -> None:
         """

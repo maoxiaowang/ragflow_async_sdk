@@ -11,8 +11,9 @@ from ..http import AsyncHTTPClient
 from ..models import AgentCompletionResult, ChatCompletionResult
 from ..models.session import BaseSession
 from ..types.session import SessionType
+from ..utils.entity_helpers import get_single_or_raise
 from ..utils.normalizers import normalize_ids
-from ..utils.validators import require_params, validate_enum
+from ..utils.validators import require_params, validate_enum, resolve_unique_field
 
 T = TypeVar("T", bound=BaseSession)
 
@@ -103,15 +104,12 @@ class SessionMixin(Generic[T]):
         *,
         session_id: Optional[str] = None,
         name: Optional[str] = None,
-    ) -> Optional[T]:
+    ) -> T:
         """
         Get a single session by session_id or name.
         Exactly one of session_id or name must be provided.
         """
-        if not session_id and not name:
-            raise RAGFlowValidationError("Either session_id or name must be provided")
-        if session_id and name:
-            raise RAGFlowValidationError("Only one of session_id or name can be provided")
+        param_name, param_value = resolve_unique_field(session_id=session_id, name=name)
 
         sessions, _ = await self.list_sessions(
             parent_id=parent_id,
@@ -121,14 +119,12 @@ class SessionMixin(Generic[T]):
             name=name,
         )
 
-        if not sessions:
-            return None
-
-        if len(sessions) > 1:
-            key = f"session_id={session_id}" if session_id else f"name={name}"
-            raise RAGFlowConflictError(f"Multiple sessions found for {key}")
-
-        return sessions[0]
+        return get_single_or_raise(
+            items=sessions,
+            key_name=param_name,
+            key_value=param_value,
+            entity_name="Session"
+        )
 
     async def update_session(
         self,
