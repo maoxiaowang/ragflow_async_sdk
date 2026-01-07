@@ -1,6 +1,7 @@
 # RAGFlow Async SDK - User Guide
 
 This guide provides step-by-step tutorials and detailed examples for using the **RAGFlow Async SDK**.
+It is intended for Python developers who want to integrate with RAGFlow asynchronously.
 
 ---
 
@@ -36,21 +37,26 @@ client = AsyncRAGFlowClient(
 import asyncio
 
 async def main():
+    # Perform a simple health check
     system_health = await client.systems.healthz()
     print(system_health.status, system_health.details)
 
 asyncio.run(main())
 ```
 
+> You can also use the SDK in async frameworks like FastAPI or any asyncio-based environment.
+
 ---
 
 ## 2. Core Concepts
 
-- **Dataset**: Container for documents.
-- **Document**: Individual file with metadata.
-- **Chunk**: Segment of document content for retrieval.
-- **Chat / Agent**: Assistants for QA or workflow.
-- **Session**: Conversation context for Chat/Agent.
+| Concept      | Description |
+|--------------|------------|
+| Dataset      | Container for documents |
+| Document     | Individual file with metadata |
+| Chunk        | Segment of document content for retrieval |
+| Chat / Agent | Assistants for QA or workflow |
+| Session      | Conversation context for Chat/Agent |
 
 ---
 
@@ -133,6 +139,7 @@ print(result.answer)
 
 ### Ask in Chat (Streaming)
 ```python
+# Streaming responses are returned as an async generator
 async for chunk in await client.chats.ask(chat.id, session.id, "Hello", stream=True):
     print(chunk.answer, end="")
 ```
@@ -185,6 +192,8 @@ await client.files.remove_files([file_id], destination_folder_id=other_folder.id
 - Normalizers: `normalize_ids`
 - File helpers: `file_from_path`, `file_from_bytes`, `file_from_url`
 
+> See the API Reference for full usage of validators and file helpers.
+
 ---
 
 ## 10. Error Handling
@@ -210,10 +219,10 @@ except RAGFlowTimeoutError:
 
 ## 11. Tips & Tricks
 
-- Handling large files efficiently
-- Streaming large chat sessions
-- Retry and rate-limit handling
-- Use normalizers & validators consistently
+- Handling large files efficiently (use streaming or chunked uploads)
+- Streaming large chat sessions with `stream=True`
+- Retry and rate-limit handling using `asyncio.sleep` + `try/except`
+- Use normalizers & validators consistently for parameter safety
 
 ---
 
@@ -226,7 +235,7 @@ The RAGFlow SDK is designed with the following principles:
 - **Typed and predictable:** Return values are typed, ensuring IDE support and fewer runtime errors.
 - **No httpx leakage:** Internal HTTP client is encapsulated.
 - **Extensible:** Easily extendable for new APIs, entities, or utilities.
-- **Error-first philosophy:** If it runs without errors, it’s working as intended.
+- **Error-safe by design:** Operations are considered successful if no errors are raised.
 
 ---
 

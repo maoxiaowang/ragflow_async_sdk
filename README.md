@@ -57,7 +57,7 @@ asyncio.run(main())
 
 ## 📚 Documentation
 
-See the complete usage guide here:  
+See the quick usage guide here:  
 
 👉 **[User Guide](docs/user_guide.md)**
 
@@ -71,7 +71,7 @@ See the complete usage guide here:
 - [System](docs/api_reference.md#system-apis)
 
 ### 📖 Full API Reference
-[API Reference](docs/api_reference.md)
+- [API Reference](docs/api_reference.md)
 
 ### 💡 Error Reference
 - [Error Reference](docs/error_reference.md#error-reference)
