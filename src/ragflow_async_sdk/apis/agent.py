@@ -1,3 +1,7 @@
+# Copyright 2026 Oliver
+# Licensed under the Apache License, Version 2.0
+# See LICENSE file for details.
+
 from typing import Optional, Any, AsyncGenerator
 
 from .mixins import SessionMixin
@@ -17,14 +21,14 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
     _session_model = AgentSession
 
     async def list_agents(
-        self,
-        *,
-        page: int = 1,
-        page_size: int = 30,
-        orderby: OrderBy | str = OrderBy.CREATE_TIME,
-        desc: bool = True,
-        agent_id: Optional[str] = None,
-        title: Optional[str] = None,
+            self,
+            *,
+            page: int = 1,
+            page_size: int = 30,
+            orderby: OrderBy | str = OrderBy.CREATE_TIME,
+            desc: bool = True,
+            agent_id: Optional[str] = None,
+            title: Optional[str] = None,
     ) -> tuple[list[Agent], int]:
         """
         List agents with optional filters.
@@ -58,10 +62,10 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
         return agents, len(agents)
 
     async def get_agent(
-        self,
-        *,
-        agent_id: Optional[str] = None,
-        title: Optional[str] = None,
+            self,
+            *,
+            agent_id: Optional[str] = None,
+            title: Optional[str] = None,
     ) -> Optional[Agent]:
         """
         Retrieve a single agent by ID or title.
@@ -98,11 +102,11 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
         return agents[0]
 
     async def create_agent(
-        self,
-        title: str,
-        dsl: dict,
-        *,
-        description: Optional[str] = None,
+            self,
+            title: str,
+            dsl: dict,
+            *,
+            description: Optional[str] = None,
     ) -> Agent:
         """
         Create a new agent.
@@ -193,11 +197,11 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
         return bool(resp.get("data", False))
 
     async def create_session(
-        self,
-        agent_id: str,
-        *,
-        name: str = "New session",
-        user_id: Optional[str] = None,
+            self,
+            agent_id: str,
+            *,
+            name: str = "New session",
+            user_id: Optional[str] = None,
     ) -> AgentSession:
         """
         Create a new session under an agent.
@@ -213,16 +217,16 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
         return await super().create_session(parent_id=agent_id, name=name, user_id=user_id)
 
     async def list_sessions(
-        self,
-        agent_id: str,
-        *,
-        page: int = 1,
-        page_size: int = 30,
-        orderby: OrderBy | str = OrderBy.CREATE_TIME,
-        desc: bool = True,
-        name: Optional[str] = None,
-        session_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+            self,
+            agent_id: str,
+            *,
+            page: int = 1,
+            page_size: int = 30,
+            orderby: OrderBy | str = OrderBy.CREATE_TIME,
+            desc: bool = True,
+            name: Optional[str] = None,
+            session_id: Optional[str] = None,
+            user_id: Optional[str] = None,
     ) -> tuple[list[AgentSession], int]:
         """
         List sessions for an agent.
@@ -265,12 +269,12 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
         )
 
     async def update_session(
-        self,
-        agent_id: str,
-        session_id: str,
-        *,
-        name: Optional[str] = None,
-        user_id: Optional[str] = None,
+            self,
+            agent_id: str,
+            session_id: str,
+            *,
+            name: Optional[str] = None,
+            user_id: Optional[str] = None,
     ) -> None:
         """
         Update an agent session.
@@ -284,9 +288,9 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
         await super().update_session(parent_id=agent_id, session_id=session_id, name=name, user_id=user_id)
 
     async def delete_sessions(
-        self,
-        agent_id: str,
-        session_ids: Optional[str | list[str]] = None,
+            self,
+            agent_id: str,
+            session_ids: Optional[str | list[str]] = None,
     ) -> None:
         """
         Delete one or more agent sessions.

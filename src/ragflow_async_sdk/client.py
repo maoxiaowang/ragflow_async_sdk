@@ -1,6 +1,7 @@
-from .apis.agent import AgentAPI
-from .apis.file import FileAPI
-from .apis.system import SystemAPI
+# Copyright 2026 Oliver
+# Licensed under the Apache License, Version 2.0
+# See LICENSE file for details.
+
 from .exceptions import RAGFlowConfigError
 from .http import AsyncHTTPClient
 from .apis import (
@@ -8,8 +9,10 @@ from .apis import (
     DocumentAPI,
     ChunkAPI,
     ChatAPI,
+    AgentAPI,
     SessionAPI,
-    FileAPI
+    FileAPI,
+    SystemAPI
 )
 
 

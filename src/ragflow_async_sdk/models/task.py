@@ -1,3 +1,7 @@
+# Copyright 2026 Oliver
+# Licensed under the Apache License, Version 2.0
+# See LICENSE file for details.
+
 from __future__ import annotations
 
 from dataclasses import dataclass

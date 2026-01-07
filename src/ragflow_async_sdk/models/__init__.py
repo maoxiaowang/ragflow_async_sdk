@@ -1,3 +1,7 @@
+# Copyright 2026 Oliver
+# Licensed under the Apache License, Version 2.0
+# See LICENSE file for details.
+
 from .agent import Agent, AgentCompletionResult
 from .chat import ChatAssistant, ChatCompletionResult
 from .chunk import Chunk

@@ -1,3 +1,7 @@
+# Copyright 2026 Oliver
+# Licensed under the Apache License, Version 2.0
+# See LICENSE file for details.
+
 from __future__ import annotations
 
 from typing import (
@@ -6,7 +10,6 @@ from typing import (
 )
 
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
-from ..exceptions.api import RAGFlowConflictError
 from ..http import AsyncHTTPClient
 from ..models import AgentCompletionResult, ChatCompletionResult
 from ..models.session import BaseSession

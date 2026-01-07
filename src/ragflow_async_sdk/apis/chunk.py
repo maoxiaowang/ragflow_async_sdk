@@ -1,12 +1,15 @@
+# Copyright 2026 Oliver
+# Licensed under the Apache License, Version 2.0
+# See LICENSE file for details.
+
 from typing import Any, Optional, Union
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError
-from ..exceptions.api import RAGFlowConflictError
 from ..models.chunk import Chunk
 from ..utils.entity_helpers import get_single_or_raise
 from ..utils.normalizers import normalize_ids
-from ..utils.validators import require_params, resolve_unique_field
+from ..utils.validators import require_params
 
 
 class ChunkAPI(BaseAPI):
