@@ -78,6 +78,10 @@ See the quick usage guide here:
 
 ### 🧬 Entities Reference
 - [Entities Reference](docs/entities_reference.md#entities-reference)
+
+### 🧪 Testing
+- [Testing Guide](docs/testing_guide.md)
+
 ---
 
 ## License

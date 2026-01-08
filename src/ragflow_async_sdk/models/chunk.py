@@ -22,6 +22,7 @@ class Chunk(BaseEntity):
     create_time: Optional[str] = None
     create_timestamp: Optional[float] = None
     important_keywords: Optional[list[str]] = None
+    questions: Optional[list[str]] = None
     positions: Optional[list[str]] = None
 
     __export_fields__ = (

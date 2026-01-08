@@ -20,15 +20,20 @@ class AsyncHTTPClient:
     """Common Async HTTP Client"""
 
     def __init__(
-            self,
-            base_url: str,
-            *,
-            headers: Optional[dict] = None,
-            timeout: float = 5.0,
-            **kwargs,
+        self,
+        base_url: str,
+        *,
+        headers: Optional[dict] = None,
+        timeout: float = 5.0,
+        _client: httpx.AsyncClient | None = None,
+        **kwargs,
     ):
         self.base_url = base_url.rstrip("/")
-        kwargs.setdefault("trust_env", False)
+
+        if _client is not None:
+            self._client = _client
+        else:
+            kwargs.setdefault("trust_env", False)
         self._client = httpx.AsyncClient(
             base_url=self.base_url,
             headers=headers or {},
@@ -46,10 +51,10 @@ class AsyncHTTPClient:
         return f"{self.base_url}/{path.lstrip('/')}"
 
     def _build_headers(
-            self,
-            *,
-            headers: Optional[dict] = None,
-            with_auth: bool = True,
+        self,
+        *,
+        headers: Optional[dict] = None,
+        with_auth: bool = True,
     ) -> dict:
         final_headers = dict(self._client.headers)
 
@@ -63,10 +68,10 @@ class AsyncHTTPClient:
 
     @staticmethod
     async def _with_httpx_exceptions(
-            coro: Callable[[], Awaitable[T]],
-            *,
-            method: str,
-            url: str,
+        coro: Callable[[], Awaitable[T]],
+        *,
+        method: str,
+        url: str,
     ) -> T:
         """
         Translate httpx exceptions into SDK-level exceptions.
@@ -81,12 +86,12 @@ class AsyncHTTPClient:
             raise RAGFlowTransportError(f"Transport error on {method} {url}") from e
 
     async def _send(
-            self,
-            request_coro: Callable[[], Awaitable[httpx.Response]],
-            *,
-            method: str,
-            url: str,
-            raise_for_status: bool = True,
+        self,
+        request_coro: Callable[[], Awaitable[httpx.Response]],
+        *,
+        method: str,
+        url: str,
+        raise_for_status: bool = True,
     ) -> httpx.Response:
         """
         Send request and handle httpx + HTTP status errors.
@@ -172,11 +177,11 @@ class AsyncHTTPClient:
         return await self._request("DELETE", path, **kwargs)
 
     async def raw_get(
-            self,
-            path: str,
-            *,
-            headers: Optional[dict] = None,
-            timeout: Optional[float] = None,
+        self,
+        path: str,
+        *,
+        headers: Optional[dict] = None,
+        timeout: Optional[float] = None,
     ) -> httpx.Response:
         """
         Raw GET request, used for healthz or non-standard endpoints.
@@ -198,10 +203,10 @@ class AsyncHTTPClient:
         )
 
     def stream(
-            self,
-            method: str,
-            url: str,
-            **kwargs,
+        self,
+        method: str,
+        url: str,
+        **kwargs,
     ):
         """
         Thin wrapper around httpx.AsyncClient.stream

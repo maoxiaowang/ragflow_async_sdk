@@ -6,6 +6,7 @@ from typing import Any, Optional, Union
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError
+from ..exceptions.api import RAGFlowResponseError
 from ..models.chunk import Chunk
 from ..utils.entity_helpers import get_single_or_raise
 from ..utils.normalizers import normalize_ids
@@ -22,7 +23,7 @@ class ChunkAPI(BaseAPI):
         content: str,
         important_keywords: Optional[list[str]] = None,
         questions: Optional[list[str]] = None,
-    ) -> dict[str, Any]:
+    ) -> Chunk:
         """
         Add a new chunk to a specific document.
 
@@ -34,7 +35,7 @@ class ChunkAPI(BaseAPI):
             questions: Optional list of questions associated with the chunk.
 
         Returns:
-            dict: Added chunk data.
+            Chunk: Added chunk data.
         """
         require_params(dataset_id=dataset_id, document_id=document_id, content=content)
 
@@ -48,7 +49,11 @@ class ChunkAPI(BaseAPI):
         url = f"/datasets/{dataset_id}/documents/{document_id}/chunks"
         resp = await self._client.post(url, json=payload)
         resp = self._handle_response(resp)
-        return resp.get("data", {})
+        data = resp.get("data", {})
+        chunk = data.get("chunk")
+        if not chunk:
+            raise RAGFlowResponseError()
+        return Chunk.from_raw(chunk)
 
     async def list_chunks(
         self,

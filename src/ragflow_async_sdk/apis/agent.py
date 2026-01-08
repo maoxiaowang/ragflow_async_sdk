@@ -20,6 +20,47 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
     _parent_type = "agents"
     _session_model = AgentSession
 
+    async def create_agent(
+            self,
+            title: str,
+            dsl: dict,
+            *,
+            description: Optional[str] = None,
+    ) -> None:
+        """
+        Create a new agent.
+        The create_agent method returns None because the server does not provide the created object.
+        Use get_agent to retrieve it if needed.
+
+        Args:
+            title: Agent title.
+            dsl: Agent DSL configuration (graph, components, retrieval, etc.).
+            description: Optional description of the agent.
+
+        Returns:
+            None.
+
+        Raises:
+            RAGFlowAPIError: If creation fails.
+            RAGFlowResponseError: If agent cannot be retrieved after creation.
+        """
+        require_params(title=title, dsl=dsl)
+
+        payload = {
+            "title": title,
+            "description": description,
+            "dsl": dsl,
+        }
+        payload = self._normalize_request(payload)
+
+        resp = await self._client.post("/agents", json=payload)
+        resp = self._handle_response(resp)
+
+        if not resp.get("data"):
+            raise RAGFlowAPIError("Create agent failed")
+
+        return None
+
     async def list_agents(
             self,
             *,
@@ -77,7 +118,7 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
             title: Optional agent title.
 
         Returns:
-            Agent instance if found, else None.
+            Agent instance
 
         Raises:
             RAGFlowValidationError: If both or neither of `agent_id` and `title` are provided.
@@ -100,49 +141,6 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
             raise RAGFlowConflictError(f"Multiple agents found for {key}")
 
         return agents[0]
-
-    async def create_agent(
-            self,
-            title: str,
-            dsl: dict,
-            *,
-            description: Optional[str] = None,
-    ) -> Agent:
-        """
-        Create a new agent.
-
-        Args:
-            title: Agent title.
-            dsl: Agent DSL configuration (graph, components, retrieval, etc.).
-            description: Optional description of the agent.
-
-        Returns:
-            Agent instance.
-
-        Raises:
-            RAGFlowAPIError: If creation fails.
-            RAGFlowResponseError: If agent cannot be retrieved after creation.
-        """
-        require_params(title=title, dsl=dsl)
-
-        payload = {
-            "title": title,
-            "description": description,
-            "dsl": dsl,
-        }
-        payload = self._normalize_request(payload)
-
-        resp = await self._client.post("/agents", json=payload)
-        resp = self._handle_response(resp)
-
-        if not resp.get("data"):
-            raise RAGFlowAPIError("Create agent failed")
-
-        agent = await self.get_agent(title=title)
-        if agent is None:
-            raise RAGFlowResponseError("Agent created but cannot be retrieved")
-
-        return agent
 
     async def update_agent(
             self,

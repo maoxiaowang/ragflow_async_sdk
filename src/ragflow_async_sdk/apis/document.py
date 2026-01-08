@@ -7,6 +7,7 @@ from typing import Optional, Any
 
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
+from ..exceptions.api import RAGFlowResponseError
 from ..models.document import Document
 from ..types import OrderBy, ChunkMethod
 from ..utils.entity_helpers import get_single_or_raise
@@ -185,8 +186,14 @@ class DocumentAPI(BaseAPI):
         resp = await self._client.get(url, params=params)
         resp = self._handle_response(resp)
 
-        raw_docs = resp.get("data", {}).get("docs", [])
-        total = resp.get("data", {}).get("total", 0)
+        data = resp.get("data", {})
+        if not isinstance(data, dict):
+            raise RAGFlowResponseError(
+                f"Response data is of type '{type(data).__name__}', "
+                f"but a dictionary was expected."
+            )
+        raw_docs = data.get("docs", [])
+        total = data.get("total", 0)
 
         documents = [Document.from_raw(d) for d in raw_docs]
         return documents, total

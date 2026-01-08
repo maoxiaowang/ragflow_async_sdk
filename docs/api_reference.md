@@ -1234,12 +1234,15 @@ Create a new agent.
 
 #**Returns**
 
-- `Agent` instance
+- `None`
+
+> The create_agent method returns `None` because the server does not provide the created object. 
+> Use `get_agent` to retrieve it if needed.
 
 **Example**
 
 ```python
-agent = await client.agents.create_agent(
+await client.agents.create_agent(
     title="demo-agent",
     dsl={
         "graph": {...},
@@ -1248,7 +1251,6 @@ agent = await client.agents.create_agent(
     },
     description="A test agent"
 )
-print(agent.id, agent.title)
 ```
 
 ### ⚡ List Agents
