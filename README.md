@@ -35,8 +35,8 @@ All operations in the RAGFlow SDK are asynchronous. To use the SDK, first initia
 from ragflow_async_sdk import AsyncRAGFlowClient
 
 client = AsyncRAGFlowClient(
+    server_url="http://your-ragflow-address",
     api_key="YOUR_API_KEY",
-    server_url="http://your-ragflow-address"
 )
 ```
 
@@ -48,7 +48,7 @@ import asyncio
 async def main():
     # Example: Health check
     system_health = await client.systems.healthz()
-    print(system_health.status, system_health.details)
+    print(system_health.status)
 
 # Run the async main function
 asyncio.run(main())

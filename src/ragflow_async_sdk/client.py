@@ -3,6 +3,7 @@
 # See LICENSE file for details.
 
 from typing import Optional
+from urllib.parse import urlparse
 
 from .apis import (
     DatasetAPI,
@@ -31,8 +32,19 @@ class AsyncRAGFlowClient:
         _raw_http_client: Optional[AsyncHTTPClient] = None,
         **kwargs,
     ):
+        # server URL verification
+        server_url = server_url.strip()
+        if not server_url.startswith(("http://", "https://")):
+            server_url = "http://" + server_url
+        parsed = urlparse(server_url)
+        if not parsed.scheme or not parsed.netloc:
+            raise RAGFlowConfigError(f"Invalid server_url: {server_url!r}")
+        self.server_url = server_url.rstrip("/")
+
+        # API version check
         if api_version not in ("v1",):
             raise RAGFlowConfigError("API version only supports v1 now")
+
         headers = {"Authorization": f"Bearer {api_key}", "Accept": "application/json"}
         base_url = f'{server_url.rstrip()}/api/{api_version}'
         self._http = _http_client or AsyncHTTPClient(base_url, headers=headers, timeout=timeout, **kwargs)
