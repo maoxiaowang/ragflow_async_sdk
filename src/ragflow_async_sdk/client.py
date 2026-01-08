@@ -33,12 +33,12 @@ class AsyncRAGFlowClient:
         **kwargs,
     ):
         # server URL verification
-        server_url = server_url.strip()
-        if not server_url.startswith(("http://", "https://")):
-            server_url = "http://" + server_url
         parsed = urlparse(server_url)
         if not parsed.scheme or not parsed.netloc:
-            raise RAGFlowConfigError(f"Invalid server_url: {server_url!r}")
+            raise RAGFlowConfigError(
+                f"Invalid server_url: {server_url!r}. "
+                "Please provide a valid URL (including scheme, e.g., http:// or https://)."
+            )
         self.server_url = server_url.rstrip("/")
 
         # API version check
