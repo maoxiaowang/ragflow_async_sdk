@@ -62,9 +62,10 @@ asyncio.run(main())
 
 ## 📚 Documentation
 
-See the quick usage guide here:
+📝 [User Guide](docs/user_guide.md)
 
-👉 **[User Guide](docs/user_guide.md)**
+### ⚡ FastAPI Integration
+* [FastAPI Usage Examples](docs/fastapi_usage_examples.md) 
 
 ### 🧩 Main Modules
 
