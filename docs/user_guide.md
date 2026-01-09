@@ -1,4 +1,4 @@
-# 📘 User Guide
+# 📝 User Guide
 
 This guide provides step-by-step tutorials and detailed examples for using the **RAGFlow Async SDK**.
 It is intended for Python developers who want to integrate with RAGFlow asynchronously.
@@ -27,8 +27,8 @@ pip install aiofiles
 from ragflow_async_sdk import AsyncRAGFlowClient
 
 client = AsyncRAGFlowClient(
-    api_key="YOUR_API_KEY",
-    server_url="http://your-ragflow-address"
+    server_url="http://your-ragflow-address",
+    api_key="YOUR_API_KEY"
 )
 ```
 
@@ -45,7 +45,7 @@ async def main():
 asyncio.run(main())
 ```
 
-> You can also use the SDK in async frameworks like FastAPI or any asyncio-based environment.
+> You can also use the SDK in async frameworks like FastAPI or any asyncio-based environment. See: [FastAPI Usage Examples](fastapi_usage_examples.md)
 
 ---
 

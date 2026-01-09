@@ -58,12 +58,13 @@ asyncio.run(main())
 
 ## 📚 Documentation
 
-📝 [User Guide](docs/user_guide.md)
+### 📝 User Guide
+* [User Guide](docs/user_guide.md)
 
 ### ⚡ FastAPI Integration
-* [FastAPI Usage Examples](docs/fastapi_usage_examples.md) 
+* [Usage Examples](docs/fastapi_usage_examples.md) 
 
-### 🧩 Main Modules
+### 🧩 Core Modules
 
 * [Datasets](docs/api_reference.md#-dataset-apis)
 * [Documents](docs/api_reference.md#-document-apis)

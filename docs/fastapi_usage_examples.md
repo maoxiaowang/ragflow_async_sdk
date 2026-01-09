@@ -15,7 +15,7 @@ app = FastAPI()
 
 client = AsyncRAGFlowClient(
     server_url="https://your-ragflow-server",
-    api_key="your-api-key",
+    api_key="YOUR_API_KEY",
 )
 ```
 
