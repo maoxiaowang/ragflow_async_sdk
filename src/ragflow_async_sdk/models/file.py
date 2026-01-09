@@ -3,7 +3,7 @@
 # See LICENSE file for details.
 
 from dataclasses import dataclass
-from typing import Optional, Any, Self
+from typing import Optional, Any, Self, AsyncIterator
 
 from ..models.base import BaseEntity
 
@@ -60,3 +60,10 @@ class ConversionResult:
     kb_id: str
     status: str
     message: str | None = None
+
+
+@dataclass
+class DownloadedFile:
+    filename: str
+    content_type: str
+    stream: AsyncIterator[bytes]

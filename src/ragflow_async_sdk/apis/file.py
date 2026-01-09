@@ -6,9 +6,10 @@ from typing import Optional
 
 from ..apis.base import BaseAPI
 from ..exceptions import RAGFlowValidationError
-from ..models.file import Folder, File, ListFilesResult, ConversionResult
+from ..models.file import Folder, File, ListFilesResult, ConversionResult, DownloadedFile
 from ..types import OrderBy
 from ..types.file import FileType
+from ..utils.files import parse_content_disposition
 from ..utils.validators import require_params, validate_file_tuples
 
 
@@ -268,15 +269,15 @@ class FileAPI(BaseAPI):
         data = self._handle_response(resp)["data"]
         return [ConversionResult(**item) for item in data]
 
-    async def download_file(self, file_id: str) -> bytes:
+    async def download_file(self, file_id: str) -> DownloadedFile:
         """
-        Download the content of a file.
+        Download the content of a file as a DownloadedFile.
 
         Args:
             file_id: ID of the file to download.
 
         Returns:
-            File content as bytes.
+            DownloadedFile: contains filename, content_type, and async stream.
 
         Raises:
             RAGFlowValidationError: If file_id is missing.
@@ -286,4 +287,15 @@ class FileAPI(BaseAPI):
         resp = await self._client.get(f"/file/get/{file_id}", expect_json=False)
         if resp.status_code != 200:
             self._handle_response(resp)
-        return resp.content
+
+        filename = parse_content_disposition(resp.headers.get("Content-Disposition", ""), file_id)
+
+        # Wrap content in async generator
+        async def stream_bytes():
+            yield resp.content
+
+        return DownloadedFile(
+        filename=filename,
+        content_type=resp.headers.get("Content-Type", "application/octet-stream"),
+        stream=stream_bytes(),
+    )

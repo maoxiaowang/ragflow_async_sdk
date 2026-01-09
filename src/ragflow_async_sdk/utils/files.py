@@ -3,7 +3,7 @@
 # See LICENSE file for details.
 
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 import mimetypes
 
@@ -137,3 +137,32 @@ async def file_from_url(
     )
 
     return final_name, resp.content, final_type
+
+
+def parse_content_disposition(header: str, default: str) -> str:
+    """
+    Parse the filename from a Content-Disposition HTTP header.
+
+    Supports two formats:
+    - Standard: filename="example.pdf"
+    - RFC 5987: filename*=UTF-8''example.pdf
+
+    Args:
+        header: The Content-Disposition header from the HTTP response.
+        default: The default filename to return if parsing fails.
+
+    Returns:
+        The parsed filename as a string.
+    """
+    if not header:
+        return default
+
+    for part in header.split(";"):
+        part = part.strip()
+        if part.startswith("filename*="):
+            # RFC 5987 format
+            return unquote(part.split("''")[-1].strip())
+        elif part.startswith("filename="):
+            # Standard format
+            return part.split("=")[-1].strip().strip('"')
+    return default

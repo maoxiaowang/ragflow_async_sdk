@@ -37,7 +37,7 @@ class Document(BaseEntity):
     thumbnail: Optional[str] = None
 
     progress: Optional[float] = None
-    progress_msg: Optional[list[str]] = None
+    progress_msg: Optional[str] = None
     process_begin_at: Optional[str] = None
     process_duration: Optional[float] = None
     enabled: Optional[int] = None  # 1 available, 0 unavailable

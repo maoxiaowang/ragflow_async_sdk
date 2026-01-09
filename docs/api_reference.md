@@ -496,7 +496,38 @@ await client.documents.update_document(
 )
 ```
 
----
+### ⚡ Download Document
+
+Download a document's content as bytes.
+
+**Parameters**
+
+| Parameter   | Type | Description       |
+|-------------|------|-------------------|
+| dataset_id  | str  | Target dataset ID |
+| document_id | str  | Document ID       |
+
+**Returns**
+
+- `DownloadedFile` instance:
+  - `filename`: the original filename from the server (parsed from Content-Disposition)
+  - `content_type`: HTTP Content-Type
+  - stream: async iterator of bytes
+**Example**
+
+```python
+import aiofiles
+
+file = await client.documents.download_document(
+    dataset_id=dataset.id,
+    document_id=documents[0].id
+)
+
+# Save to local file using async stream
+async with aiofiles.open(file.filename, "wb") as f:
+    async for chunk in file.stream:
+        await f.write(chunk)
+```
 
 ### ⚡ Delete Documents
 
@@ -529,39 +560,6 @@ success = await client.documents.delete_document(
 if success:
     print("Document deleted successfully")
 ```
-
----
-
-### ⚡ Download Document
-
-Download a document's content as bytes.
-
-**Parameters**
-
-| Parameter   | Type | Description       |
-|-------------|------|-------------------|
-| dataset_id  | str  | Target dataset ID |
-| document_id | str  | Document ID       |
-
-**Returns**
-
-- `bytes`: Raw file content as bytes. Can be used to save the file locally or process in memory.
-
-**Example**
-
-```python
-import aiofiles
-
-content = await client.documents.download_document(
-    dataset_id=dataset.id,
-    document_id=documents[0].id
-)
-
-async with aiofiles.open("downloaded_manual.txt", "wb") as f:
-    await f.write(content)
-```
-
----
 
 ### ⚡ Parse Documents
 
@@ -1562,7 +1560,7 @@ for f in uploaded_files:
 
 ### ⚡ Download File
 
-Download the content of a file.
+Download a file from the server as a `DownloadedFile`.
 
 **Parameters**
 
@@ -1572,7 +1570,10 @@ Download the content of a file.
 
 **Returns**
 
-- `bytes`: Raw file content as bytes. Can be used to save the file locally or process in memory.
+- `DownloadedFile` instance:
+  - `filename`: Original filename from the server (parsed from Content-Disposition)
+  - `content_type`: HTTP Content-Type of the file
+  - `stream`: Asynchronous iterator of bytes, suitable for saving large files
 
 **Example**
 

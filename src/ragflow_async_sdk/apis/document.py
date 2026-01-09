@@ -4,13 +4,14 @@
 
 from json import JSONDecodeError
 from typing import Optional, Any
-
 from .base import BaseAPI
 from ..exceptions import RAGFlowValidationError, RAGFlowAPIError
 from ..exceptions.api import RAGFlowResponseError
 from ..models.document import Document
+from ..models.file import DownloadedFile
 from ..types import OrderBy, ChunkMethod
 from ..utils.entity_helpers import get_single_or_raise
+from ..utils.files import parse_content_disposition
 from ..utils.normalizers import normalize_ids
 from ..utils.validators import require_params, validate_enum, resolve_unique_field
 
@@ -93,21 +94,27 @@ class DocumentAPI(BaseAPI):
         resp = await self._client.put(url, json=payload)
         resp = self._handle_response(resp)
 
-        return Document.from_raw(resp.get("data") or {})
+        data = resp.get("data")
+        if not data:
+            raise RAGFlowResponseError("Document update failed, no data returned")
+        return Document.from_raw(data)
 
-    async def download_document(self, dataset_id: str, document_id: str) -> bytes:
+    async def download_document(self, dataset_id: str, document_id: str) -> DownloadedFile:
         """
-        Download a document as bytes.
+        Download a document as a DownloadedFile.
 
         Args:
-            dataset_id: Dataset containing the document.
-            document_id: Document ID to download.
+            dataset_id: The ID of the dataset containing the document.
+            document_id: The ID of the document to download.
 
         Returns:
-            Document content as bytes.
+            DownloadedFile: A dataclass containing:
+                - filename: Original filename from the server (parsed from Content-Disposition)
+                - content_type: HTTP Content-Type
+                - stream: Asynchronous iterator of bytes
 
         Raises:
-            RAGFlowAPIError: If download fails.
+            RAGFlowAPIError: If the download fails.
         """
         require_params(dataset_id=dataset_id, document_id=document_id)
 
@@ -124,7 +131,20 @@ class DocumentAPI(BaseAPI):
                 details={"status": resp.status_code, "response": data},
                 status_code=resp.status_code,
             )
-        return resp.content
+
+        filename = parse_content_disposition(
+            resp.headers.get("Content-Disposition", ""),
+            document_id
+        )
+
+        async def stream_bytes():
+            yield resp.content
+
+        return DownloadedFile(
+            filename=filename,
+            content_type=resp.headers.get("Content-Type", "application/octet-stream"),
+            stream=stream_bytes(),
+        )
 
     async def list_documents(
         self,
