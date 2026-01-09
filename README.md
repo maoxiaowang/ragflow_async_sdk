@@ -54,10 +54,6 @@ async def main():
 asyncio.run(main())
 ```
 
-> Notes:
->
-> All SDK calls are async; use `await` and `async for` as needed.
-
 ---
 
 ## 📚 Documentation
