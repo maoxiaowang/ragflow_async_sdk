@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Any
 
 from ..exceptions import RAGFlowAPIError
+from ..exceptions.api import RAGFlowAuthError
 from ..http import AsyncHTTPClient
 
 
@@ -65,10 +66,16 @@ class BaseAPI:
         code = response.get("code")
 
         if code != 0:
+            if code == 401:
+                raise RAGFlowAuthError(
+                    status_code=code,
+                    message=response.get("message", "RAGFlow authentication failed."),
+                    details=response,
+                )
+
             raise RAGFlowAPIError(
                 status_code=400,
                 message=response.get("message", "RAGFlow API error"),
-                code=str(code),
                 details=response,
             )
 
