@@ -6,13 +6,12 @@ from typing import Optional, Any, AsyncGenerator
 
 from .base import BaseAPI
 from .mixins import SessionMixin
-from ..exceptions import RAGFlowValidationError
-from ..exceptions.api import RAGFlowConflictError
 from ..models.chat import ChatAssistant, ChatCompletionResult
 from ..models.session import ChatSession
 from ..types import OrderBy
+from ..utils.entity_helpers import get_single_or_raise
 from ..utils.normalizers import normalize_ids
-from ..utils.validators import require_params
+from ..utils.validators import require_params, resolve_unique_field
 
 
 class ChatAPI(SessionMixin[ChatSession], BaseAPI):
@@ -169,11 +168,8 @@ class ChatAPI(SessionMixin[ChatSession], BaseAPI):
             RAGFlowValidationError: If parameters are invalid.
             RAGFlowConflictError: If multiple chats match.
         """
-        if not chat_id and not name:
-            raise RAGFlowValidationError("Either chat_id or name must be provided")
 
-        if chat_id and name:
-            raise RAGFlowValidationError("Only one of chat_id or name can be provided")
+        param_name, param_value = resolve_unique_field(chat_id=chat_id, name=name)
 
         chats, _ = await self.list_chats(
             page=1,
@@ -182,14 +178,12 @@ class ChatAPI(SessionMixin[ChatSession], BaseAPI):
             name=name,
         )
 
-        if not chats:
-            return None
-
-        if len(chats) > 1:
-            key = f"id={chat_id}" if chat_id else f"name={name}"
-            raise RAGFlowConflictError(f"Multiple chats found for {key}")
-
-        return chats[0]
+        return get_single_or_raise(
+            items=chats,
+            key_name=param_name,
+            key_value=param_value,
+            entity_name="ChatAssistant",
+        )
 
     async def create_session(
         self,

@@ -31,11 +31,16 @@ async def test_upload_document(client):
     assert len(files) == len(uploaded_docs)
 
 
-
 @pytest.mark.asyncio
 async def test_download_document(client):
-    content = await client.documents.download_document("ds_id_1", "doc_id_1")
-    assert isinstance(content, bytes)
+    document = await client.documents.download_document("ds_id_1", "doc_id_1")
+    assert document.filename == "doc_id_1"
+    chunks = []
+    async for chunk in document.stream:
+        chunks.append(chunk)
+
+    data = b"".join(chunks)
+    assert data == b"file content"
 
 
 @pytest.mark.asyncio

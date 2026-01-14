@@ -7,11 +7,12 @@ from typing import Optional, Any, AsyncGenerator
 from .mixins import SessionMixin
 from ..apis.base import BaseAPI
 from ..exceptions import RAGFlowValidationError
-from ..exceptions.api import RAGFlowConflictError, RAGFlowAPIError, RAGFlowResponseError
+from ..exceptions.api import RAGFlowAPIError
 from ..models.agent import Agent, AgentCompletionResult
 from ..models.session import AgentSession
 from ..types import OrderBy
-from ..utils.validators import require_params
+from ..utils.entity_helpers import get_single_or_raise
+from ..utils.validators import require_params, resolve_unique_field
 
 
 class AgentAPI(SessionMixin[AgentSession], BaseAPI):
@@ -124,23 +125,18 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
             RAGFlowValidationError: If both or neither of `agent_id` and `title` are provided.
             RAGFlowConflictError: If multiple agents match the query.
         """
-        if not agent_id and not title:
-            raise RAGFlowValidationError("Either agent_id or title must be provided")
-        if agent_id and title:
-            raise RAGFlowValidationError("Only one of agent_id or title can be provided")
+        param_name, param_value = resolve_unique_field(agent_id=agent_id, title=title)
 
         agents, _ = await self.list_agents(
             page=1, page_size=2, agent_id=agent_id, title=title
         )
 
-        if not agents:
-            return None
-
-        if len(agents) > 1:
-            key = f"id={agent_id}" if agent_id else f"title={title}"
-            raise RAGFlowConflictError(f"Multiple agents found for {key}")
-
-        return agents[0]
+        return get_single_or_raise(
+            items=agents,
+            key_name=param_name,
+            key_value=param_value,
+            entity_name="Agent",
+        )
 
     async def update_agent(
             self,
