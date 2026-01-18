@@ -315,23 +315,32 @@ class AgentAPI(SessionMixin[AgentSession], BaseAPI):
             **kwargs: Additional parameters such as temperature, top_p, etc.
 
         Returns:
-            - If `stream=False`: a single `AgentCompletionResult`.
-            - If `stream=True`: an async generator yielding `AgentCompletionResult` items.
+            ``AgentCompletionResult`` instance if ``stream=False``, or an async generator
+            yielding ``AgentCompletionResult`` items if ``stream=True``.
 
         Raises:
             RAGFlowValidationError: If required parameters are missing.
             RAGFlowAPIError: If API request fails.
 
-        Example:
-        ```python
-        # Non-streaming
-        result = await client.agents.ask(agent_id="agent_123", session_id="sess_456", prompt="Hello AI")
-        print(result.text)
+        Examples:
+            ::
 
-        # Streaming
-        async for chunk in client.agents.ask(agent_id="agent_123", session_id="sess_456", prompt="Hello AI", stream=True):
-            print(chunk.text)
-        ```
+                # Non-streaming
+                result = await client.agents.ask(
+                    agent_id="agent_123",
+                    session_id="sess_456",
+                    prompt="Hello AI"
+                )
+                print(result.text)
+
+                # Streaming
+                async for chunk in client.agents.ask(
+                    agent_id="agent_123",
+                    session_id="sess_456",
+                    prompt="Hello AI",
+                    stream=True
+                ):
+                    print(chunk.text)
         """
         return await super().ask(
             parent_id=agent_id,

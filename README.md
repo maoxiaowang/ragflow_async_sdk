@@ -59,36 +59,36 @@ asyncio.run(main())
 ## 📚 Documentation
 
 ### 📝 User Guide
-* [User Guide](docs/user_guide.md)
+* [User Guide](docs/md/guides/user_guide.md)
 
 ### ⚡ FastAPI Integration
-* [Usage Examples](docs/fastapi_usage_examples.md) 
+* [Usage Examples](docs/md/guides/fastapi_usage_examples.md) 
 
 ### 🧩 Core Modules
 
-* [Datasets](docs/api_reference.md#-dataset-apis)
-* [Documents](docs/api_reference.md#-document-apis)
-* [Chunks](docs/api_reference.md#-chunk-apis)
-* [Chat Assistants](docs/api_reference.md#-chat-apis)
-* [Agents](docs/api_reference.md#-agent-apis)
-* [Files](docs/api_reference.md#-file-apis)
-* [System](docs/api_reference.md#-system-apis)
+* [Datasets](docs/md/references/api_reference.md#-dataset-apis)
+* [Documents](docs/md/references/api_reference.md#-document-apis)
+* [Chunks](docs/md/references/api_reference.md#-chunk-apis)
+* [Chat Assistants](docs/md/references/api_reference.md#-chat-apis)
+* [Agents](docs/md/references/api_reference.md#-agent-apis)
+* [Files](docs/md/references/api_reference.md#-file-apis)
+* [System](docs/md/references/api_reference.md#-system-apis)
 
 ### 📖 Full API Reference
 
-* [API Reference](docs/api_reference.md)
+* [API Reference](docs/md/references/api_reference.md)
 
 ### 💡 Error Reference
 
-* [Error Reference](docs/error_reference.md#error-reference)
+* [Error Reference](docs/md/references/error_reference.md#error-reference)
 
 ### 🧬 Entities Reference
 
-* [Entities Reference](docs/entities_reference.md#entities-reference)
+* [Entities Reference](docs/md/references/entities_reference.md#entities-reference)
 
 ### 🧪 Testing
 
-* [Testing Guide](docs/testing_guide.md)
+* [Testing Guide](docs/md/guides/testing_guide.md)
 
 ---
 
