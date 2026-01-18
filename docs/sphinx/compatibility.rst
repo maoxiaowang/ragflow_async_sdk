@@ -11,4 +11,4 @@ This SDK supports the following RAGFlow versions:
    * - 0.1.x
      - 0.22, 0.23
 
-⚠️ Make sure your RAGFlow server version falls within the supported range for your SDK version.
+Make sure your RAGFlow server version falls within the supported range for your SDK version.

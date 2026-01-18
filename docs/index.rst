@@ -56,5 +56,4 @@ Quick Links
    sphinx/models
    sphinx/types
    sphinx/errors
-   sphinx/utils
    sphinx/compatibility
