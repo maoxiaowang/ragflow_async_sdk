@@ -78,8 +78,6 @@ asyncio.run(main())
 
 ## 📚 Documentation
 
-[Online Document](https://ragflow-async-sdk.readthedocs.io/en/latest/index.html)
-
 ### 📝 User Guide
 * [User Guide](docs/md/guides/user_guide.md)
 
