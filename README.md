@@ -1,12 +1,12 @@
 # RAGFlow Async SDK
 
-<a href="https://ragflow-async-sdk.readthedocs.io/en/latest/index.html" target="_blank"> 
+<a href="https://ragflow-async-sdk.readthedocs.io/en/latest/index.html" target="_blank" style="text-decoration: none;"> 
     <img alt="Online Document" src="https://img.shields.io/badge/Online-Document-4e6b99?style=flat&logo=read-the-docs&logoColor=white"> 
 </a>&nbsp;
-<a href="https://github.com/maoxiaowang/ragflow_async_sdk/blob/main/LICENSE" target="_blank"> 
+<a href="https://github.com/maoxiaowang/ragflow_async_sdk/blob/main/LICENSE" target="_blank" style="text-decoration: none;"> 
     <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-3c9d6e?style=flat&logo=github&logoColor=white"> 
 </a>&nbsp;
-<a href="https://pypi.org/project/ragflow-async-sdk/" target="_blank"> 
+<a href="https://pypi.org/project/ragflow-async-sdk/" target="_blank" style="text-decoration: none;"> 
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-v0.1.1-9b4ecc?style=flat&logo=python&logoColor=white"> 
 </a>
 
