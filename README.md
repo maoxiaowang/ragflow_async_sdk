@@ -1,12 +1,12 @@
 # RAGFlow Async SDK
 
-<a href="https://ragflow-async-sdk.readthedocs.io/en/latest/index.html" target="_blank" style="text-decoration: none;"> 
+<a href="https://ragflow-async-sdk.readthedocs.io/en/latest/index.html" target="_blank"> 
     <img alt="Online Document" src="https://img.shields.io/badge/Online-Document-4e6b99?style=flat&logo=read-the-docs&logoColor=white"> 
 </a>&nbsp;
-<a href="https://github.com/maoxiaowang/ragflow_async_sdk/blob/main/LICENSE" target="_blank" style="text-decoration: none;"> 
+<a href="https://github.com/maoxiaowang/ragflow_async_sdk/blob/main/LICENSE" target="_blank"> 
     <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-3c9d6e?style=flat&logo=github&logoColor=white"> 
 </a>&nbsp;
-<a href="https://pypi.org/project/ragflow-async-sdk/" target="_blank" style="text-decoration: none;"> 
+<a href="https://pypi.org/project/ragflow-async-sdk/" target="_blank"> 
     <img alt="PyPI" src="https://img.shields.io/badge/PyPI-v0.1.1-9b4ecc?style=flat&logo=python&logoColor=white"> 
 </a>
 
@@ -29,10 +29,11 @@ Provides clean, typed, and production-ready access to RAGFlow features such as:
 
 This SDK version **0.1.x** supports the following RAGFlow versions:
 
-| SDK Version | RAGFlow Version  | Support Level                                              | Notes                              |
-|-------------|------------------|------------------------------------------------------------|------------------------------------|
-| 0.1.x       | \>= 0.22         | ![✅](https://img.shields.io/badge/-Fully_Supported-4CAF50) | All SDK interfaces fully supported |
-| 0.1.x       | 0.22 and earlier | ![❌](https://img.shields.io/badge/-Untested-B0BEC5)        | Not guaranteed                     |
+| SDK Version | RAGFlow Version  | Support Level                                              | Notes              |
+|-------------|------------------|------------------------------------------------------------|--------------------|
+| 0.1.x       | \>= 0.22         | ![✅](https://img.shields.io/badge/-Fully_Supported-4CAF50) | Fully tested       |
+| 0.1.x       | 0.21 and earlier | ![❌](https://img.shields.io/badge/-Untested-B0BEC5)        | Partial / untested |
+
 ---
 
 ## ⚡ Quick Start
@@ -49,7 +50,7 @@ pip install ragflow-async-sdk
 
 All operations in the RAGFlow SDK are asynchronous. To use the SDK, first initialize the client and then run async calls inside Python's `asyncio` event loop.
 
-#### 🛠 Initialization
+#### Initialization
 
 ```python
 from ragflow_async_sdk import AsyncRAGFlowClient
@@ -60,7 +61,7 @@ client = AsyncRAGFlowClient(
 )
 ```
 
-#### ⏩ Run with asyncio
+#### Run with asyncio
 
 ```python
 import asyncio
@@ -78,13 +79,13 @@ asyncio.run(main())
 
 ## 📚 Documentation
 
-### 📝 User Guide
+### User Guide
 * [User Guide](docs/md/guides/user_guide.md)
 
-### ⚡ FastAPI Integration
+### FastAPI Integration
 * [Usage Examples](docs/md/guides/fastapi_usage_examples.md) 
 
-### 🧩 Core Modules
+### Core Modules
 
 * [Datasets](docs/md/references/api_reference.md#-dataset-apis)
 * [Documents](docs/md/references/api_reference.md#-document-apis)
@@ -94,24 +95,28 @@ asyncio.run(main())
 * [Files](docs/md/references/api_reference.md#-file-apis)
 * [System](docs/md/references/api_reference.md#-system-apis)
 
-### 📖 Full API Reference
+### References
 
 * [API Reference](docs/md/references/api_reference.md)
-
-### 💡 Error Reference
-
 * [Error Reference](docs/md/references/error_reference.md#error-reference)
-
-### 🧬 Entities Reference
-
 * [Entities Reference](docs/md/references/entities_reference.md#entities-reference)
 
-### 🧪 Testing
+### Testing
 
 * [Testing Guide](docs/md/guides/testing_guide.md)
+
+---
+
+## Support & Contribution
+
+If you encounter any issues or have suggestions, please feel free to [open an issue](https://github.com/maoxiaowang/ragflow_async_sdk/issues).
+
+Contributions are always welcome! You can submit pull requests or propose improvements via GitHub.
 
 ---
 
 ## License
 
 Apache License 2.0
+
+See the [LICENSE](https://github.com/maoxiaowang/ragflow_async_sdk/blob/main/LICENSE) file for details.
