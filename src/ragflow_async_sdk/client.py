@@ -20,8 +20,48 @@ from .http import AsyncHTTPClient
 
 
 class AsyncRAGFlowClient:
-    """RAGFlow async SDK top-level client."""
+    """
+    The RAGFlow asynchronous SDK top-level client. This client provides
+    access to all RAGFlow resources in an async manner.
 
+    Args:
+        server_url (str): The base URL of the RAGFlow server.
+        api_key (str): API key for authentication.
+        timeout (float, optional): HTTP request timeout in seconds. Defaults to 5.0.
+        api_version (str, optional): API version to use. Currently only "v1" is supported. Defaults to "v1".
+        **kwargs: Additional keyword arguments passed to HTTP client constructors.
+
+    Attributes:
+        datasets (DatasetAPI): Interface for dataset operations.
+        documents (DocumentAPI): Interface for document operations.
+        chunks (ChunkAPI): Interface for chunk operations.
+        chats (ChatAPI): Interface for chat operations.
+        sessions (SessionAPI): Interface for session operations.
+        agents (AgentAPI): Interface for agent operations.
+        systems (SystemAPI): Interface for system operations.
+        files (FileAPI): Interface for file operations.
+
+    Raises:
+        RAGFlowConfigError: If the `server_url` is invalid or `api_version` is unsupported.
+
+    Examples:
+        ::
+
+            import asyncio
+            from ragflow_async_sdk import AsyncRAGFlowClient
+
+            async def main():
+                async with AsyncRAGFlowClient(
+                    server_url="http://your-ragflow-address",
+                    api_key="YOUR_API_KEY",
+                ) as client:
+                    # Example: Health check
+                    system_health = await client.systems.healthz()
+                    print(system_health.status)
+
+            # Run the async main function
+            asyncio.run(main())
+    """
     def __init__(
         self,
         server_url: str,

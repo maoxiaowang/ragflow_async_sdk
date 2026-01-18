@@ -15,7 +15,35 @@ from ..utils.validators import require_params, validate_enum, resolve_unique_fie
 
 
 class DatasetAPI(BaseAPI):
-    """API for managing datasets."""
+    """API for managing datasets asynchronously.
+
+    This class provides all operations related to datasets in RAGFlow,
+    including creation, update, deletion, listing, and knowledge graph construction.
+
+    Examples:
+        ::
+
+            import asyncio
+            from ragflow_async_sdk import AsyncRAGFlowClient
+
+            async def main():
+                async with AsyncRAGFlowClient(
+                    server_url="http://your-ragflow-address",
+                    api_key="YOUR_API_KEY",
+                ) as client:
+                    # Create a dataset
+                    dataset = await client.datasets.create_dataset(
+                        name="MyDataset",
+                        chunk_method="NAIVE"
+                    )
+                    print(dataset.id)
+
+                    # List datasets
+                    datasets, total = await client.datasets.list_datasets(page=1, page_size=10)
+                    print(total)
+
+            asyncio.run(main())
+    """
 
     async def create_dataset(
         self,
@@ -29,8 +57,7 @@ class DatasetAPI(BaseAPI):
         avatar: str | None = None,
         permission: Permission | str = Permission.ME,
     ) -> Dataset:
-        """
-        Create a new dataset.
+        """Create a new dataset.
 
         Args:
             name: Dataset name.
@@ -43,14 +70,22 @@ class DatasetAPI(BaseAPI):
             permission: Access permission for the dataset.
 
         Returns:
-            Dataset instance of the created dataset.
+            Dataset: Instance of the created dataset.
 
         Raises:
             RAGFlowValidationError: If parameters are invalid.
             RAGFlowAPIError: If creation fails.
+
+        Examples:
+            ::
+
+                dataset = await client.datasets.create_dataset(
+                    name="ExampleDataset",
+                    chunk_method="NAIVE"
+                )
+                print(dataset.id)
         """
         require_params(name=name)
-
         chunk_method = validate_enum(chunk_method, ChunkMethod, "chunk_method")
         permission = validate_enum(permission, Permission, "permission")
 
@@ -90,9 +125,7 @@ class DatasetAPI(BaseAPI):
         payload = self._normalize_request(payload)
         resp = await self._client.post("/datasets", json=payload)
         resp = self._handle_response(resp)
-
         data = resp["data"]
-
         return Dataset.from_raw(data)
 
     @staticmethod
@@ -127,8 +160,7 @@ class DatasetAPI(BaseAPI):
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
     ) -> tuple[list[Dataset], int]:
-        """
-        List datasets with optional filters.
+        """List datasets with optional filters.
 
         Args:
             page: Page number.
@@ -139,7 +171,7 @@ class DatasetAPI(BaseAPI):
             name: Optional dataset name filter.
 
         Returns:
-            Tuple of list of Dataset instances and total count.
+            tuple: A tuple containing a list of Dataset instances and total count.
 
         Raises:
             RAGFlowAPIError: If listing fails.
@@ -158,18 +190,16 @@ class DatasetAPI(BaseAPI):
 
         raw_items: list[dict[str, Any]] = resp.get("data", [])
         total = resp.get("total_datasets", 0)
-
         datasets = [Dataset.from_raw(item) for item in raw_items]
         return datasets, total
 
     async def get_dataset(
-            self,
-            *,
-            dataset_id: Optional[str] = None,
-            name: Optional[str] = None,
+        self,
+        *,
+        dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> Dataset:
-        """
-        Get a single dataset by ID or name.
+        """Get a single dataset by ID or name.
 
         Exactly one of dataset_id or name must be provided.
 
@@ -178,21 +208,19 @@ class DatasetAPI(BaseAPI):
             name: Dataset name.
 
         Returns:
-            Dataset instance if found, otherwise None.
+            Dataset instance.
 
         Raises:
             RAGFlowValidationError: If both or neither parameters are provided.
             RAGFlowConflictError: If multiple datasets match the query.
         """
         param_name, param_value = resolve_unique_field(dataset_id=dataset_id, name=name)
-
         datasets, _ = await self.list_datasets(
             page=1,
             page_size=2,
             dataset_id=dataset_id,
             name=name,
         )
-
         return get_single_or_raise(
             items=datasets,
             key_name=param_name,
@@ -201,17 +229,17 @@ class DatasetAPI(BaseAPI):
         )
 
     async def update_dataset(
-            self,
-            dataset_id: str,
-            *,
-            name: Optional[str] = None,
-            avatar: Optional[str] = None,
-            description: Optional[str] = None,
-            embedding_model: Optional[str] = None,
-            permission: Optional[Permission | str] = None,
-            pagerank: Optional[int] = None,
-            chunk_method: Optional[ChunkMethod | str] = None,
-            parser_config: Optional[dict[str, Any]] = None,
+        self,
+        dataset_id: str,
+        *,
+        name: Optional[str] = None,
+        avatar: Optional[str] = None,
+        description: Optional[str] = None,
+        embedding_model: Optional[str] = None,
+        permission: Optional[Permission | str] = None,
+        pagerank: Optional[int] = None,
+        chunk_method: Optional[ChunkMethod | str] = None,
+        parser_config: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Update dataset fields.

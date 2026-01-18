@@ -193,6 +193,6 @@ The RAGFlow SDK is designed with the following principles:
 
 ## 🔗 References
 
-* [API Reference](api_reference.md)
-* [Error Reference](error_reference.md)
-* [Entities Reference](entities_reference.md)
+* [API Reference](../references/api_reference.md)
+* [Error Reference](../references/error_reference.md)
+* [Entities Reference](../references/entities_reference.md)
